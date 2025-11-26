@@ -64,20 +64,12 @@ venv\Scripts\activate
 
 # 📦 2. 패키지 설치 (requirements.txt 기반)
 
-초기 개발자는 필요한 패키지를 설치한 후 아래 명령어로 freeze 했습니다:
-
-```
-pip freeze > requirements.txt
-```
 
 다른 개발자(또는 새로운 환경)는 다음 명령어 하나로 **전체 패키지 설치**만 하면 됩니다:
 
 ```
 pip install -r requirements.txt
 ```
-
-👉 일일이 `pip install fastapi sqlalchemy ...` 할 필요 없음
-👉 Dockerfile에서도 그대로 활용 가능 (RUN pip install -r requirements.txt)
 
 ---
 
