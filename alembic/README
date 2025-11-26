@@ -1,0 +1,7 @@
+Generic single-database configuration.
+xmas-lights-backend/
+ ├─ alembic/               ← 마이그레이션 스크립트 폴더
+ │   ├── versions/         ← 변경 이력 저장되는 폴더
+ │   ├── env.py            ← DB 연결 설정 들어갈 핵심 파일
+ │   └── script.py.mako    ← 템플릿
+ └─ alembic.ini            ← Alembic 글로벌 설정 파일
