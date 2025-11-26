@@ -74,7 +74,43 @@ pip install -r requirements.txt
 
 ---
 
-# 🔐 3. 환경변수(.env) 설정
+# 🗄 3. 데이터베이스(Neon) 설정
+
+본 프로젝트는 **Neon.tech**의 PostgreSQL을 사용합니다.
+
+### ✔ 가입 후 Neon 프로젝트 생성 시 설정해야 할 값
+
+| 항목            | 설정값                            |
+| ------------- | ------------------------------ |
+| 데이터베이스 엔진     | PostgreSQL                     |
+| PostgreSQL 버전 | **17**                         |
+| 호스팅 타입        | **AWS**                        |
+| 리전(Region)    | **Singapore (ap-southeast-1)** |
+
+### ✔ DATABASE_URL 구성 예시
+
+Neon에서 제공하는 Connection String(URI)을 그대로 사용합니다.
+
+예시:
+
+```
+postgresql://USER:PASSWORD@YOUR-NEON-HOST.neon.tech/neondb?sslmode=require
+```
+
+### ✔ 위 URI는 `.env` 파일에 아래처럼 입력합니다
+
+```
+DATABASE_URL=postgresql://USER:PASSWORD@HOST/DBNAME?sslmode=require
+```
+
+> ⚠ sslmode=require 는 Neon에서 **필수**입니다.
+> (삭제 시 연결 실패함)
+
+---
+
+---
+
+# 🔐 4. 환경변수(.env) 설정
 
 루트에 `.env` 파일 생성:
 
@@ -90,7 +126,7 @@ ACCESS_TOKEN_EXPIRE_MINUTES=1440
 
 ---
 
-# ⚙️ 4. core 설정 (FastAPI 핵심 구성)
+# ⚙️ 5. core 설정 (FastAPI 핵심 구성)
 
 ### ✔ config.py
 
@@ -109,7 +145,7 @@ ACCESS_TOKEN_EXPIRE_MINUTES=1440
 
 ---
 
-# 🧩 5. 스키마(Schemas) 작성
+# 🧩 6. 스키마(Schemas) 작성
 
 FastAPI는 스키마(Pydantic 모델) 기반으로:
 
@@ -129,7 +165,7 @@ FastAPI는 스키마(Pydantic 모델) 기반으로:
 
 ---
 
-# 🗂 6. 서비스 레이어(Service Layer)
+# 🗂 7. 서비스 레이어(Service Layer)
 
 서비스 레이어는 **비즈니스 로직을 담당하는 계층**이며,
 현재는 함수 구조만 정의된 상태입니다.
@@ -143,7 +179,7 @@ FastAPI는 스키마(Pydantic 모델) 기반으로:
 
 ---
 
-# 🗄 7. 데이터베이스 설정 (SQLAlchemy)
+# 🗄 8. 데이터베이스 설정 (SQLAlchemy)
 
 ### ✔ base.py
 
@@ -159,7 +195,7 @@ Neon PostgreSQL 과 연결하도록 구성됨.
 
 ---
 
-# 🏷 8. 모델(ORM) 정의
+# 🏷 9. 모델(ORM) 정의
 
 관계 구조:
 
@@ -178,7 +214,7 @@ Alembic 마이그레이션을 통해 DB 테이블로 변환됩니다.
 
 ---
 
-# 🏗 9. Alembic 마이그레이션 설정
+# 🏗 10. Alembic 마이그레이션 설정
 
 Alembic은 SQLAlchemy 모델을 기반으로 DB 스키마를 자동 관리해주는 도구입니다.
 
@@ -226,7 +262,7 @@ alembic upgrade head
 
 ---
 
-# 🔀 10. API 라우터 구조 구성
+# 🔀 11. API 라우터 구조 구성
 
 각 라우터는 현재 “ping 테스트 엔드포인트”만 포함된 상태이며,
 향후 기능 구현 시 서비스 레이어와 연결될 예정입니다.
@@ -240,7 +276,7 @@ FastAPI main.py에서 include_router로 등록됨.
 
 ---
 
-# 📘 11. Swagger / API 문서
+# 📘 12. Swagger / API 문서
 
 FastAPI는 스키마와 라우터를 기반으로
 자동 API 문서를 생성하며, UI로 테스트가 가능합니다.
@@ -272,7 +308,7 @@ Swagger 기능:
 
 ---
 
-# 🚫 12. .gitignore 설명 (필수 항목 포함)
+# 🚫 13. .gitignore 설명 (필수 항목 포함)
 
 다음 파일들은 절대 git에 포함되면 안 됩니다:
 
