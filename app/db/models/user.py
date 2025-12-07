@@ -9,14 +9,8 @@ class User(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String, unique=True, index=True, nullable=False)
-    hashed_password = Column(String, nullable=False)
-    nickname = Column(String, nullable=True)
+    password_hash = Column(String, nullable=False)
 
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
-    # 한 유저 = 하나의 캡슐 (1:1)
-    capsule = relationship(
-        "Capsule",
-        back_populates="owner",
-        uselist=False     # ⭐ 핵심 → 1:1 관계 설정
-    )
+    letters = relationship("Letter", back_populates="user", cascade="all, delete-orphan")
