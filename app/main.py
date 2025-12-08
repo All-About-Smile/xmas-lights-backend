@@ -1,9 +1,9 @@
 from fastapi import FastAPI
+
 from app.api.auth import router as auth_router
 from app.api.capsule import router as capsule_router
 from app.api.letters import router as letters_router
 from app.api.public import router as public_router
-from app.core.config import settings
 
 app = FastAPI()
 

@@ -1,0 +1,34 @@
+[tool.black]
+line-length = 88
+target-version = ["py310"]
+skip-string-normalization = false  # "" / '' 자동 통일 (기본값)
+
+[tool.ruff]
+line-length = 88
+target-version = "py310"
+
+# 어떤 규칙을 검사할지
+# E,F: 기본 에러 / 문법
+# I: import 정리
+# B: bugbear (버그 가능성 높은 패턴)
+[tool.ruff.lint]
+select = ["E", "F", "I", "B"]
+# Black과 충돌나는 규칙은 끄기
+ignore = ["E203"]
+exclude = [
+    "alembic/env.py",
+    "alembic/versions/*",
+]
+
+
+[tool.ruff.format]
+# 포매터 쪽도 Black 스타일과 최대한 맞추기
+quote-style = "double"      # 문자열은 " 이렇게
+indent-style = "space"
+line-ending = "auto"
+
+[tool.mypy]
+python_version = "3.10"
+ignore_missing_imports = true  # 외부 라이브러리 타입 정보 없어도 일단 무시
+disallow_untyped_defs = false  # 처음엔 좀 느슨하게, 나중에 점점 엄격하게 올려도 됨
+warn_unused_ignores = true
