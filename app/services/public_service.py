@@ -1,6 +1,7 @@
 # app/services/public_service.py
 
 from typing import List
+
 from app.schemas.public_schema import PublicCapsuleResponse
 
 

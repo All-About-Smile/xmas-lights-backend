@@ -1,6 +1,7 @@
 # app/core/timecheck.py
 from datetime import datetime
 
+
 def is_capsule_open(open_at: datetime) -> bool:
     """
     타임캡슐이 열릴 수 있는 날짜인지 확인하는 함수.

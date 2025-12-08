@@ -1,13 +1,12 @@
 from __future__ import with_statement
+
+import os
+import sys
 from logging.config import fileConfig
 
-from sqlalchemy import engine_from_config
-from sqlalchemy import pool
+from sqlalchemy import engine_from_config, pool
 
 from alembic import context
-
-import sys
-import os
 
 # --- 프로젝트 경로 추가 ---
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -21,11 +20,11 @@ config = context.config
 # This line sets up loggers basically.
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
-    
+
 # --- Settings 및 Base import ---
 from app.core.config import settings
 from app.db.base import Base
-from app.db.models import *   # User, Capsule, Letter 모두 읽히게 함
+from app.db.models import *  # User, Capsule, Letter 모두 읽히게 함
 
 # --- DB URL 연결 ---
 config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
@@ -76,7 +75,7 @@ def run_migrations_online() -> None:
     connectable = engine_from_config(
         config.get_section(config.config_ini_section),
         prefix="sqlalchemy.",
-        poolclass=pool.NullPool
+        poolclass=pool.NullPool,
     )
 
     with connectable.connect() as connection:
@@ -88,6 +87,7 @@ def run_migrations_online() -> None:
 
         with context.begin_transaction():
             context.run_migrations()
+
 
 # 선택 실행
 if context.is_offline_mode():

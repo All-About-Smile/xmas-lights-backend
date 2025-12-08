@@ -1,12 +1,10 @@
-
 # 📘 **🚀 FastAPI Time-Capsule Backend – Initial Setup Guide (Final README)**
 
 이 문서는 **타임캡슐 서비스 백엔드(FastAPI 기반)**의
-**초기 개발 환경 구축 과정 전체**를 정리한 공식 개발 문서입니다.
+**초기 개발 환경 구축 단계 전체**를 정리한 공식 개발 문서입니다.
 
-현재 단계는 *기능 구현 이전* 단계이며,
-프로젝트의 전체 구조, 환경 설정, DB 기반, 그리고 마이그레이션 환경까지 모두 설정된 상태입니다.
-
+현재 단계는 *기능 구현 이전*이며,
+프로젝트의 구조, DB 설정, 마이그레이션 환경, 및 코드 컨벤션 자동화 시스템까지 구성된 상태입니다.
 
 ---
 
@@ -16,32 +14,10 @@
 backend/
  ├─ app/
  │   ├─ api/
- │   │    ├── auth.py
- │   │    ├── capsule.py
- │   │    ├── letters.py
- │   │    └── public.py
  │   ├─ core/
- │   │    ├── config.py
- │   │    ├── security.py
- │   │    └── timecheck.py
  │   ├─ db/
- │   │    ├── base.py
- │   │    ├── session.py
- │   │    └── models/
- │   │         ├── user.py
- │   │         ├── capsule.py
- │   │         └── letter.py
- │   ├── schemas/
- │   │    ├── auth_schema.py
- │   │    ├── user_schema.py
- │   │    ├── capsule_schema.py
- │   │    ├── letter_schema.py
- │   │    └── public_schema.py
- │   ├── services/
- │   │    ├── auth_service.py
- │   │    ├── capsule_service.py
- │   │    ├── letter_service.py
- │   │    └── public_service.py
+ │   ├─ schemas/
+ │   ├─ services/
  │   └── main.py
  ├─ alembic/
  ├─ alembic.ini
@@ -54,175 +30,14 @@ backend/
 
 # 🧱 1. 개발 환경 세팅
 
-## ✔ 가상환경 생성 & 활성화
-
-```
+```bash
 python -m venv venv
 venv\Scripts\activate
 ```
 
 ---
 
-# 📦 2. 패키지 설치 (requirements.txt 기반)
-
-
-다른 개발자(또는 새로운 환경)는 다음 명령어 하나로 **전체 패키지 설치**만 하면 됩니다:
-
-```
-pip install -r requirements.txt
-```
-
----
-
-# 🗄 3. 데이터베이스(Neon) 설정
-
-본 프로젝트는 **Neon.tech**의 PostgreSQL을 사용합니다.
-
-### ✔ 가입 후 Neon 프로젝트 생성 시 설정해야 할 값
-
-| 항목            | 설정값                            |
-| ------------- | ------------------------------ |
-| 데이터베이스 엔진     | PostgreSQL                     |
-| PostgreSQL 버전 | **17**                         |
-| 호스팅 타입        | **AWS**                        |
-| 리전(Region)    | **Singapore (ap-southeast-1)** |
-
-### ✔ DATABASE_URL 구성 예시
-
-Neon에서 제공하는 Connection String(URI)을 그대로 사용합니다.
-
-예시:
-
-```
-postgresql://USER:PASSWORD@YOUR-NEON-HOST.neon.tech/neondb?sslmode=require
-```
-
-### ✔ 위 URI는 `.env` 파일에 아래처럼 입력합니다
-
-```
-DATABASE_URL=postgresql://USER:PASSWORD@HOST/DBNAME?sslmode=require
-```
-
-> ⚠ sslmode=require 는 Neon에서 **필수**입니다.
-> (삭제 시 연결 실패함)
-
----
-
----
-
-# 🔐 4. 환경변수(.env) 설정
-
-루트에 `.env` 파일 생성:
-
-```
-DATABASE_URL=postgresql://USER:PASSWORD@HOST/DBNAME?sslmode=require
-
-SECRET_KEY=change-this
-JWT_ALGORITHM=HS256
-ACCESS_TOKEN_EXPIRE_MINUTES=1440
-```
-
-`.env` 파일은 보안 파일이므로 **gitignore로 제외**합니다.
-
----
-
-# ⚙️ 5. core 설정 (FastAPI 핵심 구성)
-
-### ✔ config.py
-
-* pydantic-settings v2 기반
-* 모든 환경변수(.env) 로드
-* settings 객체 제공
-
-### ✔ security.py
-
-* bcrypt 비밀번호 해싱
-* JWT 토큰 생성(JOSE 라이브러리 기반)
-
-### ✔ timecheck.py
-
-* 타임캡슐 오픈 날짜 계산 유틸
-
----
-
-# 🧩 6. 스키마(Schemas) 작성
-
-FastAPI는 스키마(Pydantic 모델) 기반으로:
-
-* 요청 데이터 검증
-* 응답 데이터 구조
-* Swagger 문서 자동 생성
-
-을 수행합니다.
-
-작성된 스키마:
-
-* auth_schema.py
-* user_schema.py
-* capsule_schema.py
-* letter_schema.py
-* public_schema.py
-
----
-
-# 🗂 7. 서비스 레이어(Service Layer)
-
-서비스 레이어는 **비즈니스 로직을 담당하는 계층**이며,
-현재는 함수 구조만 정의된 상태입니다.
-
-* auth_service
-* capsule_service
-* letter_service
-* public_service
-
-구체적인 기능 구현은 이후 단계에서 진행합니다.
-
----
-
-# 🗄 8. 데이터베이스 설정 (SQLAlchemy)
-
-### ✔ base.py
-
-SQLAlchemy Base 선언
-
-### ✔ session.py
-
-* engine
-* SessionLocal
-* get_db 의존성
-
-Neon PostgreSQL 과 연결하도록 구성됨.
-
----
-
-# 🏷 9. 모델(ORM) 정의
-
-관계 구조:
-
-```
-User (1) ─── (1) Capsule ─── (N) Letter
-```
-
-모델 파일:
-
-* user.py
-* capsule.py
-* letter.py
-
-ORM 기반으로 모델과 관계가 정의되어 있으며
-Alembic 마이그레이션을 통해 DB 테이블로 변환됩니다.
-
----
-
-# 🏗 10. Alembic 마이그레이션 설정
-
-Alembic은 SQLAlchemy 모델을 기반으로 DB 스키마를 자동 관리해주는 도구입니다.
-
----
-
-## ✔ Alembic 설치
-
-(이미 requirements.txt 에 포함됨)
+# 📦 2. 패키지 설치
 
 ```bash
 pip install -r requirements.txt
@@ -230,42 +45,89 @@ pip install -r requirements.txt
 
 ---
 
-## ✔ Alembic 초기화 (최초 1회만 실행)
+# 🗄 3. 데이터베이스(Neon) 설정
 
-※ 이미 프로젝트에 포함되어 있으므로 다시 실행하면 안 됩니다.
+Neon.tech PostgreSQL 사용.
+
+| 항목            | 설정                             |
+| ------------- | ------------------------------ |
+| PostgreSQL 버전 | **17**                         |
+| 클라우드          | **AWS**                        |
+| 리전            | **Singapore (ap-southeast-1)** |
+
+### ✔ .env 예시
 
 ```
-alembic init alembic
+DATABASE_URL=postgresql://USER:PASSWORD@HOST/DBNAME?sslmode=require
+SECRET_KEY=change-this
+JWT_ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=1440
+```
+
+※ `.env` 파일은 gitignore에 포함(비공개)
+
+---
+
+# 🧩 4. FastAPI 핵심 구성
+
+* `config.py` – 환경변수 로드
+* `security.py` – JWT 및 비밀번호 해싱
+* `timecheck.py` – 날짜 계산 유틸
+
+---
+
+# 🗂 5. Schema (요청/응답 검증)
+
+* auth_schema
+* user_schema
+* capsule_schema
+* letter_schema
+* public_schema
+
+---
+
+# 🧩 6. Service Layer
+
+* auth_service
+* capsule_service
+* letter_service
+* public_service
+
+---
+
+# 🗄 7. SQLAlchemy 설정
+
+* `session.py`: SessionLocal / engine
+* `base.py`: Base 클래스
+* `models/`: ORM 모델 정의
+
+관계 구조:
+
+```
+User (1) ─── (N) Letter
 ```
 
 ---
 
-## ✔ 자동 마이그레이션 생성
+# 🏗 8. Alembic 마이그레이션
 
-모델을 기반으로 마이그레이션 파일 생성:
+### ✔ 자동 생성
 
-```
+```bash
 alembic revision --autogenerate -m "init tables"
 ```
 
----
+### ✔ DB 최신 적용
 
-## ✔ DB에 적용 (모든 개발자 공통)
-
-프로젝트 clone 한 개발자는 **이 명령어 하나만 실행하면 DB 최신 상태가 됨:**
-
-```
+```bash
 alembic upgrade head
 ```
 
-> ⚠️ `alembic init` 은 절대 다시 하지 않는다 (초기 1회만).
+> ⚠ `alembic init` 은 최초 1회만 실행 (이미 생성되어 있음)
 
 ---
 
-# 🔀 11. API 라우터 구조 구성
-
-각 라우터는 현재 “ping 테스트 엔드포인트”만 포함된 상태이며,
-향후 기능 구현 시 서비스 레이어와 연결될 예정입니다.
+# 🔀 9. API 라우터
 
 * /auth
 * /capsule
@@ -276,57 +138,67 @@ FastAPI main.py에서 include_router로 등록됨.
 
 ---
 
-# 📘 12. Swagger / API 문서
-
-FastAPI는 스키마와 라우터를 기반으로
-자동 API 문서를 생성하며, UI로 테스트가 가능합니다.
+# 📘 10. Swagger / API 문서
 
 서버 실행:
 
-```
+```bash
 uvicorn app.main:app --reload
 ```
 
-Swagger UI:
+문서:
 
-```
-http://localhost:8000/docs
-```
-
-ReDoc 문서:
-
-```
-http://localhost:8000/redoc
-```
-
-Swagger 기능:
-
-* 모든 endpoint 자동 나열
-* 요청/응답 스키마 표시
-* 직접 API 테스트
-* Bearer Token 인증 테스트 가능
+* [http://localhost:8000/docs](http://localhost:8000/docs)
+* [http://localhost:8000/redoc](http://localhost:8000/redoc)
 
 ---
 
-# 🚫 13. .gitignore 설명 (필수 항목 포함)
+# ✨ 11. 코드 컨벤션 & 자동 검사 시스템 
 
-다음 파일들은 절대 git에 포함되면 안 됩니다:
+본 프로젝트는 아래 **Python 표준 개발 컨벤션**을 따릅니다:
 
-### ❌ 가상환경 (venv)
+* **Black**: 코드 자동 포매터
+* **Ruff**: 린터 + import 정리
+* **mypy**: 타입 검사
+* **pre-commit**: git commit 시 자동 실행되는 검사 훅
 
-### ❌ 환경변수(.env)
+### 🔧 개발자가 반드시 해야 할 초기 설정
 
-### ❌ DB 로컬 파일
+레포를 처음 클론한 후 **최초 1회**:
 
-### ❌ Alembic 캐시
+```bash
+pip install -r requirements.txt
+pre-commit install
+```
 
-### ❌ Docker 볼륨 데이터
+### 🔁 자동 검사 흐름
 
-### ❌ **pycache**
+1. 파일 수정
+2. 변경 파일 stage
+3. commit 실행
+4. pre-commit이 Black/Ruff 자동 실행
+5. 문제가 없으면 커밋 성공
+6. 문제가 있으면 수정 후 재커밋
 
-프로젝트에서 사용하는 공식 `.gitignore`는 다음과 같습니다:
+Black 및 Ruff 설정은 `pyproject.toml`에서 관리됩니다.
 
-```gitignore
+---
+
+# 🚫 12. .gitignore (필수)
+
+다음 파일은 Git에 포함되지 않습니다:
+
+* 가상환경(venv)
+* `.env`
+* pycache
+* Alembic 캐시
+* 로그 파일
+* 로컬 DB 파일
+* Docker 볼륨 데이터
+
+공식 `.gitignore` 파일 전체는 다음과 같습니다:
+
+```
 # ================================
 # Python
 # ================================
@@ -410,11 +282,6 @@ docker-compose.override.yml
 # Docker local volume data
 data/
 docker-data/
-pgdata/
-postgres/
-postgres_data/
-database/
-db_data/
 
 # ================================
 # OS Specific
@@ -430,6 +297,15 @@ Thumbs.db
 *.sqlite3
 
 # ================================
+# PostgreSQL (Local Volume)
+# ================================
+pgdata/
+postgres/
+postgres_data/
+database/
+db_data/
+
+# ================================
 # Alembic
 # ================================
 alembic/versions/*.pyc
@@ -440,7 +316,29 @@ alembic/__pycache__/
 # Render / Deployment
 # ================================
 render.yaml
+
+# ================================
+# Logs / Temp
+# ================================
+*.tmp
+*.log
+*.out
+*.bak
+
+# ================================
+# Python notebook
+# ================================
+.ipynb_checkpoints/
+
+# ================================
+# Ruff
+# ================================
+.ruff_cache/
+
+# ================================
+# Pre-commit
+# ================================
+.pre-commit/
 ```
 
 ---
-
