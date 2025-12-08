@@ -1,10 +1,11 @@
 # app/services/auth_service.py
 
 from datetime import timedelta
-from app.schemas.auth_schema import RegisterRequest, LoginRequest, TokenResponse
-from app.schemas.user_schema import UserResponse
-from app.core.security import hash_password, verify_password, create_access_token
+
 from app.core.config import settings
+from app.core.security import create_access_token
+from app.schemas.auth_schema import LoginRequest, RegisterRequest, TokenResponse
+from app.schemas.user_schema import UserResponse
 
 
 def register_user(data: RegisterRequest) -> UserResponse:

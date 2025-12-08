@@ -1,10 +1,12 @@
-from pydantic import BaseModel
 from datetime import datetime
+
+from pydantic import BaseModel
+
 
 class CapsuleCreate(BaseModel):
     title: str
     content: str
-    open_at: datetime   # 언제 열리는지
+    open_at: datetime  # 언제 열리는지
     is_public: bool = False
 
 
