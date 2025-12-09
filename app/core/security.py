@@ -30,7 +30,7 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
             minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
         )
 
-    to_encode.update({"exp": expire})
+    to_encode.update({"exp": expire, "sub": str(data.get("sub"))})
     encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm="HS256")
 
     return encoded_jwt
