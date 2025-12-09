@@ -1,8 +1,8 @@
 from datetime import datetime
 from pydantic import BaseModel
 
-
 class RollingPaperCreate(BaseModel):
+
     title: str
     content: str
     open_at: datetime  # 언제 열리는지
