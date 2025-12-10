@@ -4,20 +4,13 @@ from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.core.deps import get_current_user
 from app.core.redis import redis_client
-from app.core.security import (
-    create_access_token,
-    generate_refresh_token,
-    hash_password,
-    verify_password,
-)
+from app.core.security import (create_access_token, generate_refresh_token,
+                               hash_password, verify_password)
 from app.db.models.user import User
 from app.db.session import get_db
-from app.schemas.auth_schema import (
-    LoginRequest,
-    RefreshRequest,
-    RegisterRequest,
-    TokenResponse,
-)
+from app.schemas.auth_schema import (LoginRequest, LogoutRequest,
+                                     RefreshRequest, RegisterRequest,
+                                     TokenResponse)
 from app.schemas.user_schema import UserResponse
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -91,6 +84,16 @@ def refresh_token(payload: RefreshRequest, db: Session = Depends(get_db)):
         access_token=new_access,
         refresh_token=new_refresh,
     )
+
+
+@router.post("/logout")
+def logout(payload: LogoutRequest):
+    key = f"refresh:{payload.refresh_token}"
+
+    # Redis에서 refresh token 삭제
+    redis_client.delete(key)
+
+    return {"detail": "Logged out successfully"}
 
 
 @router.get("/me", response_model=UserResponse)
