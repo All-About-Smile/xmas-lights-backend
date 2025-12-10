@@ -49,13 +49,13 @@ pip install -r requirements.txt
 
 Neon.tech PostgreSQL 사용.
 
-| 항목            | 설정                             |
-| ------------- | ------------------------------ |
+| 항목            | 설정                           |
+| --------------- | ------------------------------ |
 | PostgreSQL 버전 | **17**                         |
-| 클라우드          | **AWS**                        |
+| 클라우드        | **AWS**                        |
 | 리전            | **Singapore (ap-southeast-1)** |
 
-### ✔ .env 예시
+### ✔ .env / .env.dev / .env.local 예시
 
 ```
 DATABASE_URL=postgresql://USER:PASSWORD@HOST/DBNAME?sslmode=require
@@ -64,42 +64,42 @@ JWT_ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=1440
 ```
 
-※ `.env` 파일은 gitignore에 포함(비공개)
+※ `.env`와 `.env.*` 파일은 gitignore에 포함(비공개)
 
 ---
 
 # 🧩 4. FastAPI 핵심 구성
 
-* `config.py` – 환경변수 로드
-* `security.py` – JWT 및 비밀번호 해싱
-* `timecheck.py` – 날짜 계산 유틸
+- `config.py` – 환경변수 로드
+- `security.py` – JWT 및 비밀번호 해싱
+- `timecheck.py` – 날짜 계산 유틸
 
 ---
 
 # 🗂 5. Schema (요청/응답 검증)
 
-* auth_schema
-* user_schema
-* capsule_schema
-* letter_schema
-* public_schema
+- auth_schema
+- user_schema
+- capsule_schema
+- letter_schema
+- public_schema
 
 ---
 
 # 🧩 6. Service Layer
 
-* auth_service
-* capsule_service
-* letter_service
-* public_service
+- auth_service
+- capsule_service
+- letter_service
+- public_service
 
 ---
 
 # 🗄 7. SQLAlchemy 설정
 
-* `session.py`: SessionLocal / engine
-* `base.py`: Base 클래스
-* `models/`: ORM 모델 정의
+- `session.py`: SessionLocal / engine
+- `base.py`: Base 클래스
+- `models/`: ORM 모델 정의
 
 관계 구조:
 
@@ -129,10 +129,10 @@ alembic upgrade head
 
 # 🔀 9. API 라우터
 
-* /auth
-* /capsule
-* /letters
-* /public
+- /auth
+- /capsule
+- /letters
+- /public
 
 FastAPI main.py에서 include_router로 등록됨.
 
@@ -143,24 +143,25 @@ FastAPI main.py에서 include_router로 등록됨.
 서버 실행:
 
 ```bash
-uvicorn app.main:app --reload
+# 예시: set ENV={서버 환경 이름} && uvicorn app.main:app --reload
+set ENV=local && uvicorn app.main:app --reload
 ```
 
 문서:
 
-* [http://localhost:8000/docs](http://localhost:8000/docs)
-* [http://localhost:8000/redoc](http://localhost:8000/redoc)
+- [http://localhost:8000/docs](http://localhost:8000/docs)
+- [http://localhost:8000/redoc](http://localhost:8000/redoc)
 
 ---
 
-# ✨ 11. 코드 컨벤션 & 자동 검사 시스템 
+# ✨ 11. 코드 컨벤션 & 자동 검사 시스템
 
 본 프로젝트는 아래 **Python 표준 개발 컨벤션**을 따릅니다:
 
-* **Black**: 코드 자동 포매터
-* **Ruff**: 린터 + import 정리
-* **mypy**: 타입 검사
-* **pre-commit**: git commit 시 자동 실행되는 검사 훅
+- **Black**: 코드 자동 포매터
+- **Ruff**: 린터 + import 정리
+- **mypy**: 타입 검사
+- **pre-commit**: git commit 시 자동 실행되는 검사 훅
 
 ### 🔧 개발자가 반드시 해야 할 초기 설정
 
@@ -188,13 +189,13 @@ Black 및 Ruff 설정은 `pyproject.toml`에서 관리됩니다.
 
 다음 파일은 Git에 포함되지 않습니다:
 
-* 가상환경(venv)
-* `.env`
-* pycache
-* Alembic 캐시
-* 로그 파일
-* 로컬 DB 파일
-* Docker 볼륨 데이터
+- 가상환경(venv)
+- `.env`
+- pycache
+- Alembic 캐시
+- 로그 파일
+- 로컬 DB 파일
+- Docker 볼륨 데이터
 
 공식 `.gitignore` 파일 전체는 다음과 같습니다:
 
