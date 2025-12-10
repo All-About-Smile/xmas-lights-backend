@@ -1,3 +1,4 @@
+import secrets
 from datetime import datetime, timedelta
 
 from jose import jwt
@@ -34,3 +35,8 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
     encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm="HS256")
 
     return encoded_jwt
+
+
+# refresh 토큰 생성
+def generate_refresh_token() -> str:
+    return secrets.token_urlsafe(32)

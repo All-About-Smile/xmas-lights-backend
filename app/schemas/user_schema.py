@@ -11,9 +11,10 @@ class UserBase(BaseModel):
 
 # 요청 DTO
 class UserCreate(BaseModel):
+    userid: str
     email: EmailStr
     password: str
-
+    
 # 응답 DTO
 class UserResponse(UserBase):
     created_at: datetime
