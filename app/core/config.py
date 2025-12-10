@@ -29,7 +29,7 @@ class Settings(BaseSettings):
 
 def get_settings():
     # ENV 환경 변수 → 없으면 .env.* 파일 안의 ENV 값이 적용됨
-    env = os.getenv("ENV", ".env.local")
+    env = os.getenv("ENV", ".env.local").strip()
 
     # ENV에 따라 env 파일 선택
     env_map = {
