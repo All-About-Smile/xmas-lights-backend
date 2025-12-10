@@ -1,16 +1,17 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
+from app.core.deps import get_current_user
 from app.core.security import (create_access_token, hash_password,
                                verify_password)
 from app.db.models.user import User
 from app.db.session import get_db
 from app.schemas.auth_schema import LoginRequest, TokenResponse
-from app.schemas.user_schema import UserCreate, UserRead
+from app.schemas.user_schema import UserCreate, UserResponse, UserResponse
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
-@router.post("/signup", response_model=UserRead)
+@router.post("/signup", response_model=UserResponse)
 def signup(payload: UserCreate, db: Session = Depends(get_db)):
     # 이메일 중복 확인
     existing = db.query(User).filter(User.email == payload.email).first()
@@ -51,3 +52,9 @@ def login(payload: LoginRequest, db: Session = Depends(get_db)):
     access_token = create_access_token(token_data)
 
     return TokenResponse(access_token=access_token)
+
+
+
+@router.get("/me", response_model=UserResponse)
+def read_me(current_user: User = Depends(get_current_user)):
+    return current_user
