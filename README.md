@@ -64,6 +64,15 @@ JWT_ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=1440
 ```
 
+### ✔ Redis 및 Refresh Token 설정 예시
+
+Refresh Token을 저장하기 위해 Redis Cloud를 사용하므로 다음 환경 변수를 함께 설정해야 한다.
+```
+REDIS_URL=redis://default:******@redis-11285.c9.us-east-1-2.ec2.cloud.redislabs.com:11285
+REFRESH_TOKEN_EXPIRE_DAYS=7
+```
+
+
 ※ `.env`와 `.env.*` 파일은 gitignore에 포함(비공개)
 
 ---

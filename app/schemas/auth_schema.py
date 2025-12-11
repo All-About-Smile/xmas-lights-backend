@@ -1,20 +1,21 @@
 from pydantic import BaseModel, EmailStr
 
-
-# 회원가입 요청
 class RegisterRequest(BaseModel):
+    userid: str
     email: EmailStr
     password: str
-    nickname: str | None = None
 
-
-# 로그인 요청
 class LoginRequest(BaseModel):
-    email: EmailStr
+    userid: str
     password: str
 
-
-# 토큰 응답
 class TokenResponse(BaseModel):
     access_token: str
+    refresh_token: str
     token_type: str = "bearer"
+
+class RefreshRequest(BaseModel):
+    refresh_token: str
+
+class LogoutRequest(BaseModel):
+    refresh_token: str

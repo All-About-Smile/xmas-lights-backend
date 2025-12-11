@@ -2,21 +2,20 @@ from datetime import datetime
 
 from pydantic import BaseModel, EmailStr
 
-
+# 공통 필드(email/nickname)
 class UserBase(BaseModel):
-    id: int
     email: EmailStr
-    nickname: str | None = None
 
     class Config:
         orm_mode = True
 
-
+# 요청 DTO
 class UserCreate(BaseModel):
+    userid: str
     email: EmailStr
     password: str
-    nickname: str | None = None
-
-
+    
+# 응답 DTO
 class UserResponse(UserBase):
     created_at: datetime
+    id: int
