@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Cookie, Depends, HTTPException, Response, status
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
@@ -8,8 +8,7 @@ from app.core.security import (create_access_token, generate_refresh_token,
                                hash_password, verify_password)
 from app.db.models.user import User
 from app.db.session import get_db
-from app.schemas.auth_schema import (LoginRequest, LogoutRequest,
-                                     RefreshRequest, RegisterRequest,
+from app.schemas.auth_schema import (LoginRequest, RegisterRequest,
                                      TokenResponse)
 from app.schemas.user_schema import UserResponse
 
@@ -36,14 +35,18 @@ def register(payload: RegisterRequest, db: Session = Depends(get_db)):
 
 
 @router.post("/login", response_model=TokenResponse)
-def login(payload: LoginRequest, db: Session = Depends(get_db)):
+def login(
+    payload: LoginRequest,
+    response: Response,
+    db: Session = Depends(get_db),
+):
     user = db.query(User).filter(User.userid == payload.userid).first()
     if not user or not verify_password(payload.password, user.password_hash):
         raise HTTPException(status_code=400, detail="Incorrect userid or password")
 
     access_token = create_access_token({"sub": str(user.id)})
 
-    # Refresh Token 저장
+    # Refresh Token 생성 & 저장
     refresh_token = generate_refresh_token()
     redis_client.set(
         f"refresh:{refresh_token}",
@@ -51,15 +54,30 @@ def login(payload: LoginRequest, db: Session = Depends(get_db)):
         ex=settings.REFRESH_TOKEN_EXPIRE_DAYS * 86400,
     )
 
-    return TokenResponse(
-        access_token=access_token,
-        refresh_token=refresh_token,
+    # HttpOnly Cookie 설정
+    response.set_cookie(
+        key="refresh_token",
+        value=refresh_token,
+        httponly=True,
+        secure=settings.COOKIE_SECURE,   # prod에서는 True
+        samesite="lax",
+        max_age=settings.REFRESH_TOKEN_EXPIRE_DAYS * 86400,
+        path="/auth",
     )
+
+    return TokenResponse(access_token=access_token)
 
 
 @router.post("/refresh", response_model=TokenResponse)
-def refresh_token(payload: RefreshRequest, db: Session = Depends(get_db)):
-    key = f"refresh:{payload.refresh_token}"
+def refresh_token(
+    response: Response,
+    refresh_token: str | None = Cookie(default=None),
+    db: Session = Depends(get_db),
+):
+    if refresh_token is None:
+        raise HTTPException(status_code=401, detail="Missing refresh token")
+
+    key = f"refresh:{refresh_token}"
     user_id = redis_client.get(key)
 
     if user_id is None:
@@ -69,7 +87,7 @@ def refresh_token(payload: RefreshRequest, db: Session = Depends(get_db)):
     if not user:
         raise HTTPException(status_code=401, detail="User not found")
 
-    # Rotation
+    # 🔁 Rotation
     redis_client.delete(key)
     new_refresh = generate_refresh_token()
     redis_client.set(
@@ -78,20 +96,33 @@ def refresh_token(payload: RefreshRequest, db: Session = Depends(get_db)):
         ex=settings.REFRESH_TOKEN_EXPIRE_DAYS * 86400,
     )
 
+    # 새 access token
     new_access = create_access_token({"sub": str(user.id)})
 
-    return TokenResponse(
-        access_token=new_access,
-        refresh_token=new_refresh,
+    # 새 refresh cookie
+    response.set_cookie(
+        key="refresh_token",
+        value=new_refresh,
+        httponly=True,
+        secure=settings.COOKIE_SECURE,
+        samesite="lax",
+        max_age=settings.REFRESH_TOKEN_EXPIRE_DAYS * 86400,
+        path="/auth",
     )
+
+    return TokenResponse(access_token=new_access)
 
 
 @router.post("/logout")
-def logout(payload: LogoutRequest):
-    key = f"refresh:{payload.refresh_token}"
+def logout(
+    response: Response,
+    refresh_token: str | None = Cookie(default=None),
+):
+    if refresh_token:
+        redis_client.delete(f"refresh:{refresh_token}")
 
-    # Redis에서 refresh token 삭제
-    redis_client.delete(key)
+    # Cookie 제거
+    response.delete_cookie(key="refresh_token", path="/auth")
 
     return {"detail": "Logged out successfully"}
 

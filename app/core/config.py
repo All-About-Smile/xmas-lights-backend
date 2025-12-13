@@ -20,6 +20,9 @@ class Settings(BaseSettings):
     # ── Redis ──
     REDIS_URL: str = "redis://localhost:6379/0"
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
+    
+    # ── Cookie ──
+    COOKIE_SECURE: bool = False  # dev 기본값
 
     model_config = SettingsConfigDict(
         env_file_encoding="utf-8",
