@@ -138,14 +138,41 @@ FastAPI main.py에서 include_router로 등록됨.
 
 ---
 
-# 📘 10. Swagger / API 문서
+# 10. 서버 실행
 
-서버 실행:
-
-```bash
+## 로컬 테스트
+### Window
+```cmd
 # 예시: set ENV={서버 환경 이름} && uvicorn app.main:app --reload
 set ENV=local && uvicorn app.main:app --reload
 ```
+
+### Linux
+```bash
+export ENV=local
+uvicorn app.main:app --reload
+```
+
+## 운영 환경 (Linux)
+### 방법
+```bash
+export ENV={환경이름}
+gunicorn app.main:app \
+  -k uvicorn.workers.UvicornWorker \
+  -w {워커 개수} \
+  -b 0.0.0.0:8000
+```
+
+### 예시
+```bash
+export ENV=prod
+gunicorn app.main:app \
+  -k uvicorn.workers.UvicornWorker \
+  -w 3 \
+  -b 0.0.0.0:8000
+---
+
+# 📘 11. Swagger / API 문서
 
 문서:
 
@@ -154,7 +181,7 @@ set ENV=local && uvicorn app.main:app --reload
 
 ---
 
-# ✨ 11. 코드 컨벤션 & 자동 검사 시스템
+# ✨ 12. 코드 컨벤션 & 자동 검사 시스템
 
 본 프로젝트는 아래 **Python 표준 개발 컨벤션**을 따릅니다:
 
@@ -185,7 +212,7 @@ Black 및 Ruff 설정은 `pyproject.toml`에서 관리됩니다.
 
 ---
 
-# 🚫 12. .gitignore (필수)
+# 🚫 13. .gitignore (필수)
 
 다음 파일은 Git에 포함되지 않습니다:
 
