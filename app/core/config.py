@@ -22,6 +22,11 @@ class Settings(BaseSettings):
     REDIS_URL: str = "redis://localhost:6379/0"
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
+    # ── Cookie ──
+    COOKIE_SECURE: bool = False  # True면 HTTPS에서만 쿠키 전송
+    COOKIE_SAMESITE: str = "lax"
+
+
     # ── CORS ──
     CORS_ORIGINS: str = ""  # "http://localhost:5173,https://xxx"
 
