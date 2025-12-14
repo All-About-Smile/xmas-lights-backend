@@ -1,26 +1,40 @@
-from fastapi import APIRouter, Cookie, Depends, HTTPException, Response, status
+from typing import Annotated
+
+from fastapi import APIRouter, Cookie, Depends, Response
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.core.deps import get_current_user
+from app.core.exceptions import AppException, AuthException, ErrorCodes
 from app.core.redis import redis_client
-from app.core.security import (create_access_token, generate_refresh_token,
-                               hash_password, verify_password)
+from app.core.responses import CommonResponse
+from app.core.security import (
+    create_access_token,
+    generate_refresh_token,
+    hash_password,
+    verify_password,
+)
 from app.db.models.user import User
 from app.db.session import get_db
-from app.schemas.auth_schema import (LoginRequest, RegisterRequest,
-                                     TokenResponse)
+from app.schemas.auth_schema import LoginRequest, RegisterRequest, TokenResponse
 from app.schemas.user_schema import UserResponse
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+DBSession = Annotated[Session, Depends(get_db)]
+CurrentUser = Annotated[User, Depends(get_current_user)]
+
 
 @router.post("/register", response_model=UserResponse)
-def register(payload: RegisterRequest, db: Session = Depends(get_db)):
+def register(payload: RegisterRequest, db: DBSession):
     if db.query(User).filter(User.userid == payload.userid).first():
-        raise HTTPException(status_code=400, detail="UserID already taken")
+        raise AppException(
+            code=ErrorCodes.USER_ALREADY_EXISTS, message="UserID already taken"
+        )
 
     if db.query(User).filter(User.email == payload.email).first():
-        raise HTTPException(status_code=400, detail="Email already registered")
+        raise AppException(
+            code=ErrorCodes.USER_ALREADY_EXISTS, message="Email already registered"
+        )
 
     user = User(
         userid=payload.userid,
@@ -31,18 +45,21 @@ def register(payload: RegisterRequest, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(user)
 
-    return user
+    return CommonResponse(data=user)
 
 
 @router.post("/login", response_model=TokenResponse)
 def login(
     payload: LoginRequest,
     response: Response,
-    db: Session = Depends(get_db),
+    db: DBSession,
 ):
     user = db.query(User).filter(User.userid == payload.userid).first()
     if not user or not verify_password(payload.password, user.password_hash):
-        raise HTTPException(status_code=400, detail="Incorrect userid or password")
+        raise AuthException(
+            code=ErrorCodes.AUTH_INVALID_CREDENTIALS,
+            message="Incorrect userid or password",
+        )
 
     access_token = create_access_token({"sub": str(user.id)})
 
@@ -59,33 +76,38 @@ def login(
         key="refresh_token",
         value=refresh_token,
         httponly=True,
-        secure=settings.COOKIE_SECURE,   # prod에서는 True
+        secure=settings.COOKIE_SECURE,  # prod에서는 True
         samesite="lax",
         max_age=settings.REFRESH_TOKEN_EXPIRE_DAYS * 86400,
         path="/auth",
     )
 
-    return TokenResponse(access_token=access_token)
+    return CommonResponse(data=TokenResponse(access_token=access_token))
 
 
 @router.post("/refresh", response_model=TokenResponse)
 def refresh_token(
     response: Response,
-    refresh_token: str | None = Cookie(default=None),
-    db: Session = Depends(get_db),
+    db: DBSession,
+    refresh_token: Annotated[str | None, Cookie()] = None,
 ):
     if refresh_token is None:
-        raise HTTPException(status_code=401, detail="Missing refresh token")
+        raise AuthException(
+            code=ErrorCodes.AUTH_INVALID_TOKEN, message="Missing refresh token"
+        )
 
     key = f"refresh:{refresh_token}"
     user_id = redis_client.get(key)
 
     if user_id is None:
-        raise HTTPException(status_code=401, detail="Invalid or expired refresh token")
+        raise AuthException(
+            code=ErrorCodes.AUTH_INVALID_TOKEN,
+            message="Invalid or expired refresh token",
+        )
 
     user = db.query(User).filter(User.id == int(user_id)).first()
     if not user:
-        raise HTTPException(status_code=401, detail="User not found")
+        raise AppException(code=ErrorCodes.USER_NOT_FOUND, message="User not found")
 
     # 🔁 Rotation
     redis_client.delete(key)
@@ -110,13 +132,13 @@ def refresh_token(
         path="/auth",
     )
 
-    return TokenResponse(access_token=new_access)
+    return CommonResponse(data=TokenResponse(access_token=new_access))
 
 
 @router.post("/logout")
 def logout(
     response: Response,
-    refresh_token: str | None = Cookie(default=None),
+    refresh_token: Annotated[str | None, Cookie()] = None,
 ):
     if refresh_token:
         redis_client.delete(f"refresh:{refresh_token}")
@@ -124,9 +146,9 @@ def logout(
     # Cookie 제거
     response.delete_cookie(key="refresh_token", path="/auth")
 
-    return {"detail": "Logged out successfully"}
+    return CommonResponse(data={"detail": "Logged out successfully"})
 
 
 @router.get("/me", response_model=UserResponse)
-def read_me(current_user: User = Depends(get_current_user)):
-    return current_user
+def read_me(current_user: CurrentUser):
+    return CommonResponse(data=current_user)
