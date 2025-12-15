@@ -20,20 +20,26 @@ from app.schemas.auth_schema import LoginRequest, RegisterRequest, TokenResponse
 from app.schemas.user_schema import UserResponse
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+
 DBSession = Annotated[Session, Depends(get_db)]
 CurrentUser = Annotated[User, Depends(get_current_user)]
 
 
-@router.post("/register", response_model=UserResponse)
+# =====================
+# Register
+# =====================
+@router.post("/register", response_model=CommonResponse[UserResponse])
 def register(payload: RegisterRequest, db: DBSession):
     if db.query(User).filter(User.userid == payload.userid).first():
         raise AppException(
-            code=ErrorCodes.USER_ALREADY_EXISTS, message="UserID already taken"
+            code=ErrorCodes.USER_ALREADY_EXISTS,
+            message="UserID already taken",
         )
 
     if db.query(User).filter(User.email == payload.email).first():
         raise AppException(
-            code=ErrorCodes.USER_ALREADY_EXISTS, message="Email already registered"
+            code=ErrorCodes.USER_ALREADY_EXISTS,
+            message="Email already registered",
         )
 
     user = User(
@@ -45,10 +51,15 @@ def register(payload: RegisterRequest, db: DBSession):
     db.commit()
     db.refresh(user)
 
-    return CommonResponse(data=user)
+    return CommonResponse(
+        data=UserResponse.model_validate(user)
+    )
 
 
-@router.post("/login", response_model=TokenResponse)
+# =====================
+# Login
+# =====================
+@router.post("/login", response_model=CommonResponse[TokenResponse])
 def login(
     payload: LoginRequest,
     response: Response,
@@ -63,7 +74,6 @@ def login(
 
     access_token = create_access_token({"sub": str(user.id)})
 
-    # Refresh Token 생성 & 저장
     refresh_token = generate_refresh_token()
     redis_client.set(
         f"refresh:{refresh_token}",
@@ -71,21 +81,25 @@ def login(
         ex=settings.REFRESH_TOKEN_EXPIRE_DAYS * 86400,
     )
 
-    # HttpOnly Cookie 설정
     response.set_cookie(
         key="refresh_token",
         value=refresh_token,
         httponly=True,
-        secure=settings.COOKIE_SECURE,  # prod에서는 True
+        secure=settings.COOKIE_SECURE,
         samesite="lax",
         max_age=settings.REFRESH_TOKEN_EXPIRE_DAYS * 86400,
         path="/auth",
     )
 
-    return CommonResponse(data=TokenResponse(access_token=access_token))
+    return CommonResponse(
+        data=TokenResponse(access_token=access_token)
+    )
 
 
-@router.post("/refresh", response_model=TokenResponse)
+# =====================
+# Refresh
+# =====================
+@router.post("/refresh", response_model=CommonResponse[TokenResponse])
 def refresh_token(
     response: Response,
     db: DBSession,
@@ -93,7 +107,8 @@ def refresh_token(
 ):
     if refresh_token is None:
         raise AuthException(
-            code=ErrorCodes.AUTH_INVALID_TOKEN, message="Missing refresh token"
+            code=ErrorCodes.AUTH_INVALID_TOKEN,
+            message="Missing refresh token",
         )
 
     key = f"refresh:{refresh_token}"
@@ -107,9 +122,12 @@ def refresh_token(
 
     user = db.query(User).filter(User.id == int(user_id)).first()
     if not user:
-        raise AppException(code=ErrorCodes.USER_NOT_FOUND, message="User not found")
+        raise AppException(
+            code=ErrorCodes.USER_NOT_FOUND,
+            message="User not found",
+        )
 
-    # 🔁 Rotation
+    # rotation
     redis_client.delete(key)
     new_refresh = generate_refresh_token()
     redis_client.set(
@@ -118,10 +136,8 @@ def refresh_token(
         ex=settings.REFRESH_TOKEN_EXPIRE_DAYS * 86400,
     )
 
-    # 새 access token
     new_access = create_access_token({"sub": str(user.id)})
 
-    # 새 refresh cookie
     response.set_cookie(
         key="refresh_token",
         value=new_refresh,
@@ -132,10 +148,15 @@ def refresh_token(
         path="/auth",
     )
 
-    return CommonResponse(data=TokenResponse(access_token=new_access))
+    return CommonResponse(
+        data=TokenResponse(access_token=new_access)
+    )
 
 
-@router.post("/logout")
+# =====================
+# Logout
+# =====================
+@router.post("/logout", response_model=CommonResponse[dict])
 def logout(
     response: Response,
     refresh_token: Annotated[str | None, Cookie()] = None,
@@ -143,12 +164,18 @@ def logout(
     if refresh_token:
         redis_client.delete(f"refresh:{refresh_token}")
 
-    # Cookie 제거
     response.delete_cookie(key="refresh_token", path="/auth")
 
-    return CommonResponse(data={"detail": "Logged out successfully"})
+    return CommonResponse(
+        data={"detail": "Logged out successfully"}
+    )
 
 
-@router.get("/me", response_model=UserResponse)
+# =====================
+# Me
+# =====================
+@router.get("/me", response_model=CommonResponse[UserResponse])
 def read_me(current_user: CurrentUser):
-    return CommonResponse(data=current_user)
+    return CommonResponse(
+        data=UserResponse.model_validate(current_user)
+    )

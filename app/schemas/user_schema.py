@@ -16,6 +16,12 @@ class UserCreate(BaseModel):
     password: str
     
 # 응답 DTO
-class UserResponse(UserBase):
-    created_at: datetime
+class UserResponse(BaseModel):
     id: int
+    userid: str
+    email: str
+    created_at: datetime
+
+    model_config = {
+        "from_attributes": True
+    }
