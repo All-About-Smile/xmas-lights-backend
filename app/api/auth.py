@@ -8,15 +8,12 @@ from app.core.deps import get_current_user
 from app.core.exceptions import AppException, AuthException, ErrorCodes
 from app.core.redis import redis_client
 from app.core.responses import CommonResponse
-from app.core.security import (
-    create_access_token,
-    generate_refresh_token,
-    hash_password,
-    verify_password,
-)
+from app.core.security import (create_access_token, generate_refresh_token,
+                               hash_password, verify_password)
 from app.db.models.user import User
 from app.db.session import get_db
-from app.schemas.auth_schema import LoginRequest, RegisterRequest, TokenResponse
+from app.schemas.auth_schema import (LoginRequest, PasswordChangeRequest,
+                                     RegisterRequest, TokenResponse)
 from app.schemas.user_schema import UserResponse
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -172,10 +169,24 @@ def logout(
 
 
 # =====================
-# Me
+# password
 # =====================
-@router.get("/me", response_model=CommonResponse[UserResponse])
-def read_me(current_user: CurrentUser):
-    return CommonResponse(
-        data=UserResponse.model_validate(current_user)
-    )
+@router.post(
+    "/password",
+    response_model=CommonResponse[dict],
+)
+def change_password(
+    payload: PasswordChangeRequest,
+    db: DBSession,
+    current_user: CurrentUser,
+):
+    if not verify_password(payload.current_password, current_user.password_hash):
+        raise AuthException(
+            code=ErrorCodes.AUTH_INVALID_CREDENTIALS,
+            message="Current password is incorrect",
+        )
+
+    current_user.password_hash = hash_password(payload.new_password)
+    db.commit()
+
+    return CommonResponse(data={"detail": "Password updated successfully"})

@@ -25,3 +25,8 @@ class UserResponse(BaseModel):
     model_config = {
         "from_attributes": True
     }
+    
+
+# ===== Update Request =====
+class UserUpdateRequest(BaseModel):
+    email: EmailStr | None = None
