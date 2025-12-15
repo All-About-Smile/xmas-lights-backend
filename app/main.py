@@ -6,8 +6,14 @@ from app.api.letters import router as letters_router
 from app.api.public import router as public_router
 from app.api.rollingpaper import router as rollingpaper_router
 from app.core.config import settings
+from app.core.exception_handlers import app_exception_handler, generic_exception_handler
+from app.core.exceptions import AppException
 
 app = FastAPI(title=settings.PROJECT_NAME)
+
+# ── Exception Handlers ──
+app.add_exception_handler(AppException, app_exception_handler)
+app.add_exception_handler(Exception, generic_exception_handler)
 
 # ── CORS ──
 if settings.cors_origins_list:
