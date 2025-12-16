@@ -11,7 +11,7 @@ from app.core.responses import CommonResponse
 from app.db.models.letter import Letter
 from app.db.models.user import User
 from app.db.session import get_db
-from app.schemas.letter_schema import LetterResponse
+from app.schemas.letter_schema import LetterList
 from app.schemas.user_schema import UserResponse, UserUpdateRequest
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -88,7 +88,7 @@ def read_user_letters(
 
     # 4️) 응답 변환
     data = {
-        "items": [LetterResponse.model_validate(l) for l in letters],
+        "items": [LetterList.model_validate(l) for l in letters],
         "limit": limit,
         "offset": offset,
         "has_next": has_next,

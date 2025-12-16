@@ -2,10 +2,10 @@
 
 from typing import List
 
-from app.schemas.letter_schema import LetterCreate, LetterResponse
+from app.schemas.letter_schema import LetterCreate, LetterList
 
 
-def create_letter(user_id: int | None, data: LetterCreate) -> LetterResponse:
+def create_letter(user_id: int | None, data: LetterCreate) -> LetterList:
     """
     편지 작성
     - 로그인 한 유저라면 user_id를 작성자로 기록할 수 있음
@@ -17,7 +17,7 @@ def create_letter(user_id: int | None, data: LetterCreate) -> LetterResponse:
 
 def list_letters_for_capsule(
     capsule_id: int, current_user_id: int | None
-) -> List[LetterResponse]:
+) -> List[LetterList]:
     """
     특정 캡슐에 달린 편지 목록 조회
     - 캡슐이 열렸는지 / 권한이 있는지 체크할 수도 있음
