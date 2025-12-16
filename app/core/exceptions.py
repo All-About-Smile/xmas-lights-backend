@@ -42,6 +42,9 @@ class ErrorCodes:
     # User / Resource
     USER_ALREADY_EXISTS = 4001
     USER_NOT_FOUND = 4004
+    
+    # Letter / Resource
+    LETTER_NUMBER_CONFLICT = 4101
 
     # Validation / Request
     VALIDATION_ERROR = 4220
