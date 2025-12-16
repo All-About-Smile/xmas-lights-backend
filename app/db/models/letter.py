@@ -24,8 +24,8 @@ class Letter(Base):
     content = Column(Text, nullable=False)
 
     # 오너먼트 (일반)
-    ornament_shape = Column(String(20), nullable=True)
-    ornament_color = Column(String(20), nullable=True)
+    ornament_shape = Column(String(20), nullable=False)
+    ornament_color = Column(String(20), nullable=False)
 
     # 이벤트 오너먼트 여부
     is_event_ornament = Column(Boolean, server_default="false", nullable=False)
