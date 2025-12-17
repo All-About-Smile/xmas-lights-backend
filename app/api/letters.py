@@ -7,15 +7,19 @@ from sqlalchemy.orm import Session
 from app.core.deps import get_current_user
 from app.core.exceptions import AppException, ErrorCodes
 from app.core.responses import CommonResponse
+from app.core.security import verify_password
 from app.core.time import kst_midnight, now_kst
 from app.db.models.letter import Letter
 from app.db.models.user import User
 from app.db.session import get_db
 from app.schemas.letter_schema import (
     LetterCreateRequest,
+    LetterEditResponse,
+    LetterPasswordRequest,
     LetterDetailResponse,
     LetterListItem,
     LetterListResponse,
+    LetterUpdateRequest,
 )
 from app.services.letter_service import create_letter, get_user_letters_paginated
 from app.services.timecheck import is_time_capsule_open
@@ -24,6 +28,16 @@ router = APIRouter(prefix="/users", tags=["Letters"])
 
 DBSession = Annotated[Session, Depends(get_db)]
 CurrentUser = Annotated[User, Depends(get_current_user)]
+
+'''
+[읽기 - 주인 전용]
+GET /users/{userid}/letters/{letter_number}
+
+[수정 - 작성자 전용]
+GET    /users/{userid}/letters/{letter_number}/edit
+PATCH  /users/{userid}/letters/{letter_number}
+DELETE /users/{userid}/letters/{letter_number}
+'''
 
 
 @router.get("/{userid}/letters", response_model=CommonResponse[LetterListResponse])
@@ -115,6 +129,166 @@ def read_letter_detail(
     return CommonResponse(
         data=LetterDetailResponse.model_validate(letter)
     )
+
+@router.post(
+    "/{userid}/letters/{letter_number}/edit",
+    response_model=CommonResponse[LetterEditResponse],
+)
+def read_letter_for_edit(
+    userid: str,
+    letter_number: int,
+    payload: LetterPasswordRequest,
+    db: DBSession,
+):
+    # 1️) 유저 확인
+    user = db.query(User).filter(User.userid == userid).first()
+    if not user:
+        raise AppException(
+            code=ErrorCodes.USER_NOT_FOUND,
+            message="User not found",
+        )
+
+    # 2️) 편지 조회
+    letter = (
+        db.query(Letter)
+        .filter(
+            Letter.user_id == user.id,
+            Letter.letter_number == letter_number,
+            Letter.is_deleted == False,
+        )
+        .first()
+    )
+
+    if not letter:
+        raise AppException(
+            code=ErrorCodes.LETTER_NOT_FOUND,
+            message="Letter not found",
+        )
+
+    # 3️) 비밀번호 검증
+    if not letter.password_for_edit or not verify_password(
+        payload.password,
+        letter.password_for_edit,
+    ):
+        raise AppException(
+            code=ErrorCodes.INVALID_PASSWORD,
+            message="Invalid password",
+        )
+
+    return CommonResponse(
+        data=LetterEditResponse.model_validate(letter)
+    )
+
+    
+@router.patch(
+    "/{userid}/letters/{letter_number}",
+    response_model=CommonResponse[None],
+)
+def update_letter(
+    userid: str,
+    letter_number: int,
+    payload: LetterUpdateRequest,
+    db: DBSession,
+):
+    # 1️) 유저 확인
+    user = db.query(User).filter(User.userid == userid).first()
+    if not user:
+        raise AppException(
+            code=ErrorCodes.USER_NOT_FOUND,
+            message="User not found",
+        )
+
+    # 2️) 편지 조회
+    letter = (
+        db.query(Letter)
+        .filter(
+            Letter.user_id == user.id,
+            Letter.letter_number == letter_number,
+            Letter.is_deleted == False,
+        )
+        .first()
+    )
+
+    if not letter:
+        raise AppException(
+            code=ErrorCodes.LETTER_NOT_FOUND,
+            message="Letter not found",
+        )
+
+    # 3️) 비밀번호 검증
+    if not letter.password_for_edit or not verify_password(
+        payload.password,
+        letter.password_for_edit,
+    ):
+        raise AppException(
+            code=ErrorCodes.INVALID_PASSWORD,
+            message="Invalid password",
+        )
+
+    # 4️) 수정 반영
+    if payload.writer_nickname is not None:
+        letter.writer_nickname = payload.writer_nickname
+    if payload.content is not None:
+        letter.content = payload.content
+    if payload.ornament_shape is not None:
+        letter.ornament_shape = payload.ornament_shape
+    if payload.ornament_color is not None:
+        letter.ornament_color = payload.ornament_color
+
+    db.commit()
+
+    return CommonResponse(data=None)
+
+@router.delete(
+    "/{userid}/letters/{letter_number}",
+    response_model=CommonResponse[None],
+)
+def delete_letter(
+    userid: str,
+    letter_number: int,
+    payload: LetterPasswordRequest,
+    db: DBSession,
+):
+    # 1️) 유저 확인
+    user = db.query(User).filter(User.userid == userid).first()
+    if not user:
+        raise AppException(
+            code=ErrorCodes.USER_NOT_FOUND,
+            message="User not found",
+        )
+
+    # 2️) 편지 조회
+    letter = (
+        db.query(Letter)
+        .filter(
+            Letter.user_id == user.id,
+            Letter.letter_number == letter_number,
+            Letter.is_deleted == False,
+        )
+        .first()
+    )
+
+    if not letter:
+        raise AppException(
+            code=ErrorCodes.LETTER_NOT_FOUND,
+            message="Letter not found",
+        )
+
+    # 3️) 비밀번호 검증
+    if not letter.password_for_edit or not verify_password(
+        payload.password,
+        letter.password_for_edit,
+    ):
+        raise AppException(
+            code=ErrorCodes.INVALID_PASSWORD,
+            message="Invalid password",
+        )
+
+    # 4️) Soft Delete
+    letter.is_deleted = True
+    db.commit()
+
+    return CommonResponse(data=None)
     
     
 def get_letters_by_user_id(db: Session, user_id: int):
