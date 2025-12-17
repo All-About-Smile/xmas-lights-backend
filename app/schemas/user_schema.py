@@ -7,7 +7,7 @@ class UserBase(BaseModel):
     email: EmailStr
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 # 요청 DTO
 class UserCreate(BaseModel):
@@ -22,9 +22,8 @@ class UserResponse(BaseModel):
     email: str
     created_at: datetime
 
-    model_config = {
-        "from_attributes": True
-    }
+    class Config:
+        from_attributes = True
     
 
 # ===== Update Request =====
