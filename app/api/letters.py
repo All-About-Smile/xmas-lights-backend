@@ -7,14 +7,18 @@ from sqlalchemy.orm import Session
 from app.core.deps import get_current_user
 from app.core.exceptions import AppException, ErrorCodes
 from app.core.responses import CommonResponse
+from app.core.time import kst_midnight, now_kst
 from app.db.models.letter import Letter
 from app.db.models.user import User
 from app.db.session import get_db
-from app.schemas.letter_schema import (LetterCreateRequest,
-                                       LetterDetailResponse, LetterListItem,
-                                       LetterListResponse)
-from app.services.letter_service import (create_letter,
-                                         get_user_letters_paginated)
+from app.schemas.letter_schema import (
+    LetterCreateRequest,
+    LetterDetailResponse,
+    LetterListItem,
+    LetterListResponse,
+)
+from app.services.letter_service import create_letter, get_user_letters_paginated
+from app.services.timecheck import is_time_capsule_open
 
 router = APIRouter(prefix="/users", tags=["Letters"])
 
@@ -66,7 +70,53 @@ def create_user_letter(
 
     return CommonResponse(data=LetterDetailResponse.model_validate(letter))
 
+@router.get(
+    "/{userid}/letters/{letter_number}",
+    response_model=CommonResponse[LetterDetailResponse],
+)
+def read_letter_detail(
+    userid: str,
+    letter_number: int,
+    db: DBSession,
+    current_user: CurrentUser,  # 로그인 필수
+):
+    # 1️) userid 주인 확인
+    if current_user.userid != userid:
+        raise AppException(
+            code=ErrorCodes.PERMISSION_DENIED,
+            message="You do not have permission to access this letter.",
+        )
 
+    # 2️) 편지 조회
+    letter = (
+        db.query(Letter)
+        .filter(
+            Letter.user_id == current_user.id,
+            Letter.letter_number == letter_number,
+            Letter.is_deleted == False,
+        )
+        .first()
+    )
+
+    if not letter:
+        raise AppException(
+            code=ErrorCodes.LETTER_NOT_FOUND,
+            message="Letter not found",
+        )
+
+    # 3️) 크리스마스 잠금 (KST 기준)
+    if not is_time_capsule_open():
+        raise AppException(
+            code=ErrorCodes.LETTER_LOCKED_UNTIL_XMAS,
+            message="This letter can be opened on Christmas.",
+        )
+
+    # 4️) 응답
+    return CommonResponse(
+        data=LetterDetailResponse.model_validate(letter)
+    )
+    
+    
 def get_letters_by_user_id(db: Session, user_id: int):
     return (
         db.query(Letter)

@@ -45,6 +45,8 @@ class ErrorCodes:
     
     # Letter / Resource
     LETTER_NUMBER_CONFLICT = 4101
+    LETTER_NOT_FOUND = 4102
+    LETTER_LOCKED_UNTIL_XMAS = 4103
 
     # Validation / Request
     VALIDATION_ERROR = 4220
