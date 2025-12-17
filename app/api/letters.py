@@ -226,6 +226,8 @@ def update_letter(
         )
 
     # 4️) 수정 반영
+    if payload.writer_nickname is not None:
+        letter.writer_nickname = payload.writer_nickname
     if payload.content is not None:
         letter.content = payload.content
     if payload.ornament_shape is not None:
