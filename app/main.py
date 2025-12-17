@@ -23,6 +23,7 @@ if settings.cors_origins_list:
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
+        expose_headers=["Date"],
     )
 
 # ── Routers ──
