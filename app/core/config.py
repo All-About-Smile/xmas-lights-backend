@@ -1,8 +1,12 @@
 # app/core/config.py
 import os
+from datetime import datetime
 from typing import List
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+from app.core.time import KST
 
 
 class Settings(BaseSettings):
@@ -26,7 +30,6 @@ class Settings(BaseSettings):
     COOKIE_SECURE: bool = False  # True면 HTTPS에서만 쿠키 전송
     COOKIE_SAMESITE: str = "lax"
 
-
     # ── CORS ──
     CORS_ORIGINS: str = ""  # "http://localhost:5173,https://xxx"
 
@@ -43,6 +46,21 @@ class Settings(BaseSettings):
         if not self.CORS_ORIGINS:
             return []
         return [origin.strip() for origin in self.CORS_ORIGINS.split(",")]
+
+    @field_validator("TIME_CAPSULE_OPEN_AT", mode="before", check_fields=False)
+    @classmethod
+    def parse_time_capsule_open_at(cls, v):
+        if v is None:
+            return None
+
+        if isinstance(v, datetime):
+            return v
+
+        dt = datetime.fromisoformat(v)
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=KST)
+
+        return dt
 
 
 def get_settings():

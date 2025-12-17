@@ -1,3 +1,4 @@
+# app/core/time.py
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
@@ -20,7 +21,4 @@ def to_kst(dt: datetime) -> datetime:
 
 
 def kst_midnight(year: int, month: int, day: int) -> datetime:
-    """
-    KST 기준 자정 datetime 생성
-    """
     return datetime(year, month, day, 0, 0, 0, tzinfo=KST)
