@@ -1,5 +1,15 @@
-from sqlalchemy import (Boolean, Column, DateTime, ForeignKey, Index, Integer,
-                        String, Text, UniqueConstraint)
+from sqlalchemy import (
+    Boolean,
+    Column,
+    DateTime,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    Text,
+    UniqueConstraint,
+    CheckConstraint
+)
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
@@ -37,7 +47,7 @@ class Letter(Base):
     is_deleted = Column(Boolean, server_default="false", nullable=False)
 
     # 편지 수정용 비밀번호 (hash 저장 전제)
-    password_for_edit = Column(String(255), nullable=True)
+    password_for_edit = Column(String(255), nullable=False)
 
     # 관계 설정
     user = relationship("User", back_populates="letters")
@@ -45,7 +55,15 @@ class Letter(Base):
     __table_args__ = (
         # 롤링페이퍼 내 편지 번호 유니크 보장
         UniqueConstraint("user_id", "letter_number", name="uq_user_letter_number"),
-
         # 롤링페이퍼 조회 성능 최적화
         Index("idx_letters_user_id_created_at", "user_id", "created_at"),
+        # 오너먼트 값 제한
+        CheckConstraint(
+            "ornament_shape IN ('acorn','dongle','soap','charlie','candle','admin')",
+            name="ck_letters_ornament_shape",
+        ),
+        CheckConstraint(
+            "ornament_color IN ('yellow','purple','pink','green','blue','admin')",
+            name="ck_letters_ornament_color",
+        ),
     )

@@ -1,6 +1,8 @@
 from datetime import datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+
+from typing import Optional
 
 
 class LetterCreate(BaseModel):
@@ -46,3 +48,23 @@ class LetterDetailResponse(BaseModel):
 
     class Config:
         from_attributes = True
+        
+class LetterUpdateRequest(BaseModel):
+    content: Optional[str] = None
+    ornament_shape: Optional[str] = None
+    ornament_color: Optional[str] = None
+    password: str = Field(..., description="편지 수정용 비밀번호")
+    
+class LetterEditResponse(BaseModel):
+    letter_number: int
+    writer_nickname: str
+    content: str
+    ornament_shape: str
+    ornament_color: str
+
+    class Config:
+        from_attributes = True
+    
+class LetterPasswordRequest(BaseModel):
+    password: str = Field(..., description="편지 삭제용 비밀번호")
+    
