@@ -11,7 +11,7 @@ from app.core.security import hash_password
 from app.db.models.letter import Letter
 from app.db.models.user import User
 from app.db.session import get_db
-from app.schemas.letter_schema import LetterCreateRequest, LetterList
+from app.schemas.letter_schema import LetterCreateRequest, LetterListItem
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -74,12 +74,40 @@ def create_letter(
     return letter
 
 
-def list_letters_for_capsule(
-    capsule_id: int, current_user_id: int | None
-) -> List[LetterList]:
-    """
-    특정 캡슐에 달린 편지 목록 조회
-    - 캡슐이 열렸는지 / 권한이 있는지 체크할 수도 있음
-    """
-    # TODO: DB에서 capsule_id로 편지 리스트 조회
-    raise NotImplementedError
+def get_user_letters_paginated(
+    *,
+    db: Session,
+    userid: str,
+    limit: int,
+    offset: int,
+):
+    # 1) 유저 확인
+    user = db.query(User).filter(User.userid == userid).first()
+    if not user:
+        raise AppException(
+            code=ErrorCodes.USER_NOT_FOUND,
+            message="User not found",
+        )
+
+    # 2) 편지 조회 (+1로 has_next 판단)
+    letters = (
+        db.query(Letter)
+        .filter(
+            Letter.user_id == user.id,
+            Letter.is_deleted == False,
+        )
+        .order_by(Letter.created_at)
+        .limit(limit + 1)
+        .offset(offset)
+        .all()
+    )
+
+    has_next = len(letters) > limit
+    letters = letters[:limit]
+
+    return {
+        "letters": letters,
+        "limit": limit,
+        "offset": offset,
+        "has_next": has_next,
+    }

@@ -7,8 +7,7 @@ class LetterCreate(BaseModel):
     writer_nickname: str
     content: str
 
-
-class LetterList(BaseModel):
+class LetterListItem(BaseModel):
     letter_number: int
     writer_nickname: str
     ornament_shape: str
@@ -18,6 +17,12 @@ class LetterList(BaseModel):
     
     class Config:
         from_attributes = True
+
+class LetterListResponse(BaseModel):
+    items: list[LetterListItem]
+    limit: int
+    offset: int
+    has_next: bool
 
 class LetterCreateRequest(BaseModel):
     writer_nickname: str
