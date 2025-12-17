@@ -30,10 +30,10 @@ DBSession = Annotated[Session, Depends(get_db)]
 CurrentUser = Annotated[User, Depends(get_current_user)]
 
 '''
-[읽기 – 주인 전용]
+[읽기 - 주인 전용]
 GET /users/{userid}/letters/{letter_number}
 
-[수정 – 작성자 전용]
+[수정 - 작성자 전용]
 GET    /users/{userid}/letters/{letter_number}/edit
 PATCH  /users/{userid}/letters/{letter_number}
 DELETE /users/{userid}/letters/{letter_number}
