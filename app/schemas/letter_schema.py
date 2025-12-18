@@ -33,7 +33,6 @@ class LetterCreateRequest(BaseModel):
     content: str
     ornament_shape: OrnamentShape
     ornament_color: OrnamentColor
-    created_at: datetime
     password_for_edit: str
 
     class Config:
