@@ -1,10 +1,10 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Response, status
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.auth import router as auth_router
 from app.api.letters import router as letters_router
-from app.api.users import router as users_router
 from app.api.public import router as public_router
+from app.api.users import router as users_router
 from app.core.config import settings
 from app.core.exception_handlers import app_exception_handler, generic_exception_handler
 from app.core.exceptions import AppException
@@ -41,3 +41,8 @@ def ping():
 @app.get("/env")
 def read_env():
     return {"env": settings.ENV}
+
+
+@app.head("/health")
+def health_check(response: Response):
+    response.status_code = status.HTTP_200_OK
