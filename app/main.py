@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Response, status
+from fastapi import FastAPI, Request, Response, status
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.auth import router as auth_router
@@ -25,6 +25,24 @@ if settings.cors_origins_list:
         allow_headers=["*"],
         expose_headers=["Date"],
     )
+
+ALLOW_CROSS_ORIGIN_PATHS = {
+    "/login",
+}
+ALLOW_CROSS_ORIGIN_PREFIXES = (
+    "/users/",
+)
+
+
+@app.middleware("http")
+async def add_corp_header(request: Request, call_next):
+    response = await call_next(request)
+
+    path = request.url.path
+    if path in ALLOW_CROSS_ORIGIN_PATHS or path.startswith(ALLOW_CROSS_ORIGIN_PREFIXES):
+        response.headers["Cross-Origin-Resource-Policy"] = "cross-origin"
+
+    return response
 
 # ── Routers ──
 app.include_router(auth_router)
