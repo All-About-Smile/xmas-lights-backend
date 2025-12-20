@@ -8,7 +8,11 @@ from app.core.exceptions import AppException, ErrorCodes
 from app.core.responses import CommonResponse
 from app.db.models.user import User
 from app.db.session import get_db
-from app.schemas.user_schema import UserResponse, UserUpdateRequest
+from app.schemas.user_schema import (
+    UserExistsResponse,
+    UserResponse,
+    UserUpdateRequest,
+)
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -49,3 +53,18 @@ def update_me(
     return CommonResponse(
         data=UserResponse.model_validate(current_user)
     )
+
+
+@router.get("/{userid}", response_model=CommonResponse[UserExistsResponse])
+def check_user_exists(
+    userid: str,
+    db: DBSession,
+):
+    exists = db.query(User.id).filter(User.userid == userid).first()
+    if not exists:
+        raise AppException(
+            code=ErrorCodes.USER_NOT_FOUND,
+            message="User not found",
+        )
+
+    return CommonResponse(data=UserExistsResponse(exists=True))
