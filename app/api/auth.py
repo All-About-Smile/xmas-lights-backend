@@ -15,6 +15,7 @@ from app.db.session import get_db
 from app.schemas.auth_schema import (LoginRequest, PasswordChangeRequest,
                                      RegisterRequest, TokenResponse)
 from app.schemas.user_schema import UserResponse
+from app.services.auth_service import register_user
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -27,26 +28,7 @@ CurrentUser = Annotated[User, Depends(get_current_user)]
 # =====================
 @router.post("/register", response_model=CommonResponse[UserResponse])
 def register(payload: RegisterRequest, db: DBSession):
-    if db.query(User).filter(User.userid == payload.userid).first():
-        raise AppException(
-            code=ErrorCodes.USER_ALREADY_EXISTS,
-            message="UserID already taken",
-        )
-
-    if db.query(User).filter(User.email == payload.email).first():
-        raise AppException(
-            code=ErrorCodes.USER_ALREADY_EXISTS,
-            message="Email already registered",
-        )
-
-    user = User(
-        userid=payload.userid,
-        email=payload.email,
-        password_hash=hash_password(payload.password),
-    )
-    db.add(user)
-    db.commit()
-    db.refresh(user)
+    user = register_user(db=db, payload=payload)
 
     return CommonResponse(
         data=UserResponse.model_validate(user)
