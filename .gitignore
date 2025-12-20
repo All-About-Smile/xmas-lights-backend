@@ -1,0 +1,140 @@
+# ================================
+# Python
+# ================================
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pkl
+.Python
+*.so
+
+# ================================
+# Virtual Environment
+# ================================
+env/
+venv/
+ENV/
+.venv/
+
+# ================================
+# FastAPI / Uvicorn logs
+# ================================
+logs/
+*.log
+
+# ================================
+# Environment Variables
+# ================================
+.env
+.env.*
+!.env.example
+
+# ================================
+# IDE / Editor
+# ================================
+.vscode/
+.idea/
+*.swp
+
+# ================================
+# Pytest / Coverage
+# ================================
+.pytest_cache/
+.coverage
+htmlcov/
+coverage.xml
+
+# ================================
+# MyPy / Type Checking
+# ================================
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# ================================
+# Byte-compiled / Cache
+# ================================
+*.egg-info/
+.eggs/
+*.egg
+*.manifest
+*.spec
+.cache/
+*.cache/
+
+# ================================
+# Build / Distribution
+# ================================
+build/
+dist/
+pip-wheel-metadata/
+*.whl
+
+# ================================
+# Docker
+# ================================
+*.pid
+*.tar
+docker-compose.override.yml
+
+# Docker local volume data
+data/
+docker-data/
+
+# ================================
+# OS Specific
+# ================================
+.DS_Store
+Thumbs.db
+
+# ================================
+# Local Database Files (SQLite)
+# ================================
+*.db
+*.sqlite
+*.sqlite3
+
+# ================================
+# PostgreSQL (Local Volume)
+# ================================
+pgdata/
+postgres/
+postgres_data/
+database/
+db_data/
+
+# ================================
+# Alembic
+# ================================
+alembic/versions/*.pyc
+alembic/versions/__pycache__/
+alembic/__pycache__/
+
+# ================================
+# Render / Deployment
+# ================================
+render.yaml
+
+# ================================
+# Logs / Temp
+# ================================
+*.tmp
+*.log
+*.out
+*.bak
+
+# ================================
+# Python notebook
+# ================================
+.ipynb_checkpoints/
+
+# ================================
+# Ruff
+# ================================
+.ruff_cache/
+
+# ================================
+# Pre-commit
+# ================================
+.pre-commit/

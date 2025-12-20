@@ -1,0 +1,42 @@
+import secrets
+from datetime import datetime, timedelta
+
+from jose import jwt
+from passlib.context import CryptContext
+
+from app.core.config import settings
+
+# 비밀번호 해싱 도구
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+
+# 비밀번호 해싱
+def hash_password(password: str) -> str:
+    return pwd_context.hash(password)
+
+
+# 비밀번호 검증
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    return pwd_context.verify(plain_password, hashed_password)
+
+
+# JWT 토큰 생성
+def create_access_token(data: dict, expires_delta: timedelta | None = None):
+    to_encode = data.copy()
+
+    if expires_delta:
+        expire = datetime.utcnow() + expires_delta
+    else:
+        expire = datetime.utcnow() + timedelta(
+            minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
+        )
+
+    to_encode.update({"exp": expire, "sub": str(data.get("sub"))})
+    encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm="HS256")
+
+    return encoded_jwt
+
+
+# refresh 토큰 생성
+def generate_refresh_token() -> str:
+    return secrets.token_urlsafe(32)
