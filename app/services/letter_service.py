@@ -24,11 +24,46 @@ from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from app.constants.default_letter import DEFAULT_LETTER
 from app.core.deps import get_current_user
 from app.core.exceptions import AppException, ErrorCodes
 from app.db.models.letter import Letter
 from app.db.models.user import User
 from app.db.session import get_db
+
+
+def create_default_letter_for_user(
+    *,
+    db: Session,
+    user: User,
+) -> Letter:
+    default_password = DEFAULT_LETTER.get("password")
+    if not default_password:
+        raise AppException(
+            code=ErrorCodes.INVALID_PASSWORD,
+            message="Default letter password is missing",
+        )
+
+    last_number = (
+        db.query(func.max(Letter.letter_number))
+        .filter(Letter.user_id == user.id)
+        .scalar()
+    )
+    next_number = (last_number or 0) + 1
+
+    letter = Letter(
+        user_id=user.id,
+        letter_number=next_number,
+        writer_nickname=DEFAULT_LETTER["writer_nickname"],
+        content=DEFAULT_LETTER["content"],
+        ornament_shape=DEFAULT_LETTER["ornament_shape"],
+        ornament_color=DEFAULT_LETTER["ornament_color"],
+        password_for_edit=hash_password(default_password),
+    )
+    db.add(letter)
+    db.flush()
+    print("check")
+    return letter
 
 
 def create_letter(
