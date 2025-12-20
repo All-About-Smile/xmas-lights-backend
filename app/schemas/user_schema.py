@@ -29,3 +29,7 @@ class UserResponse(BaseModel):
 # ===== Update Request =====
 class UserUpdateRequest(BaseModel):
     email: EmailStr | None = None
+
+
+class UserExistsResponse(BaseModel):
+    exists: bool

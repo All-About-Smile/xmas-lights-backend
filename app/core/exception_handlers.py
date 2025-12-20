@@ -21,6 +21,8 @@ async def app_exception_handler(request: Request, exc: AppException):
         status = 401
     elif isinstance(exc, PermissionDeniedException):
         status = 403
+    elif exc.code in (ErrorCodes.USER_NOT_FOUND, ErrorCodes.LETTER_NOT_FOUND):
+        status = 404
 
     return JSONResponse(
         status_code=status,
