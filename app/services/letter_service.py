@@ -40,6 +40,12 @@ def create_default_letter_for_user(
     db: Session,
     user: User,
 ) -> Letter:
+    if is_time_capsule_open():
+        raise AppException(
+            code=ErrorCodes.LETTER_LOCKED_UNTIL_XMAS,
+            message="Letters can only be created before Christmas.",
+        )
+
     default_password = DEFAULT_LETTER.get("password")
     if not default_password:
         raise AppException(
@@ -75,6 +81,12 @@ def create_letter(
     user: User,
     payload: LetterCreateRequest,
 ) -> Letter:
+    if is_time_capsule_open():
+        raise AppException(
+            code=ErrorCodes.LETTER_LOCKED_UNTIL_XMAS,
+            message="Letters can only be created before Christmas.",
+        )
+
     # 1) 현재 최대 letter_number 조회
     last_number = (
         db.query(func.max(Letter.letter_number))
@@ -238,6 +250,12 @@ def update_letter_for_user(
     letter_number: int,
     payload: LetterUpdateRequest,
 ) -> None:
+    if is_time_capsule_open():
+        raise AppException(
+            code=ErrorCodes.LETTER_LOCKED_UNTIL_XMAS,
+            message="Letters can only be updated before Christmas.",
+        )
+
     user = db.query(User).filter(User.userid == userid).first()
     if not user:
         raise AppException(
@@ -289,6 +307,12 @@ def delete_letter_for_user(
     letter_number: int,
     payload: LetterPasswordRequest,
 ) -> None:
+    if is_time_capsule_open():
+        raise AppException(
+            code=ErrorCodes.LETTER_LOCKED_UNTIL_XMAS,
+            message="Letters can only be deleted before Christmas.",
+        )
+
     user = db.query(User).filter(User.userid == userid).first()
     if not user:
         raise AppException(
