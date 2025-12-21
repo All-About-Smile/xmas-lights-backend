@@ -40,12 +40,6 @@ def create_default_letter_for_user(
     db: Session,
     user: User,
 ) -> Letter:
-    if is_time_capsule_open():
-        raise AppException(
-            code=ErrorCodes.LETTER_LOCKED_UNTIL_XMAS,
-            message="Letters can only be created before Christmas.",
-        )
-
     default_password = DEFAULT_LETTER.get("password")
     if not default_password:
         raise AppException(
