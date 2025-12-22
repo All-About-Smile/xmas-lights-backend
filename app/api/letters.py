@@ -7,7 +7,6 @@ from sqlalchemy.orm import Session
 from app.core.deps import get_current_user
 from app.core.exceptions import AppException, ErrorCodes
 from app.core.responses import CommonResponse
-from app.core.security import verify_password
 from app.core.time import kst_midnight, now_kst
 from app.db.models.letter import Letter
 from app.db.models.user import User
@@ -21,8 +20,14 @@ from app.schemas.letter_schema import (
     LetterListResponse,
     LetterUpdateRequest,
 )
-from app.services.letter_service import create_letter, get_user_letters_paginated
-from app.services.timecheck import is_time_capsule_open
+from app.services.letter_service import (
+    create_letter,
+    delete_letter_for_user,
+    get_letter_detail_for_user,
+    get_letter_for_edit,
+    get_user_letters_paginated,
+    update_letter_for_user,
+)
 
 router = APIRouter(prefix="/users", tags=["Letters"])
 
@@ -94,41 +99,14 @@ def read_letter_detail(
     db: DBSession,
     current_user: CurrentUser,  # 로그인 필수
 ):
-    # 1️) userid 주인 확인
-    if current_user.userid != userid:
-        raise AppException(
-            code=ErrorCodes.PERMISSION_DENIED,
-            message="You do not have permission to access this letter.",
-        )
-
-    # 2️) 편지 조회
-    letter = (
-        db.query(Letter)
-        .filter(
-            Letter.user_id == current_user.id,
-            Letter.letter_number == letter_number,
-            Letter.is_deleted == False,
-        )
-        .first()
+    letter = get_letter_detail_for_user(
+        db=db,
+        userid=userid,
+        letter_number=letter_number,
+        current_user=current_user,
     )
 
-    if not letter:
-        raise AppException(
-            code=ErrorCodes.LETTER_NOT_FOUND,
-            message="Letter not found",
-        )
-
-    # 3️) 크리스마스 잠금 (KST 기준)
-    if not is_time_capsule_open():
-        raise AppException(
-            code=ErrorCodes.LETTER_LOCKED_UNTIL_XMAS,
-            message="This letter can be opened on Christmas.",
-        )
-
-    # 4️) 응답
-    return CommonResponse(
-        data=LetterDetailResponse.model_validate(letter)
-    )
+    return CommonResponse(data=LetterDetailResponse.model_validate(letter))
 
 @router.post(
     "/{userid}/letters/{letter_number}/edit",
@@ -140,44 +118,14 @@ def read_letter_for_edit(
     payload: LetterPasswordRequest,
     db: DBSession,
 ):
-    # 1️) 유저 확인
-    user = db.query(User).filter(User.userid == userid).first()
-    if not user:
-        raise AppException(
-            code=ErrorCodes.USER_NOT_FOUND,
-            message="User not found",
-        )
-
-    # 2️) 편지 조회
-    letter = (
-        db.query(Letter)
-        .filter(
-            Letter.user_id == user.id,
-            Letter.letter_number == letter_number,
-            Letter.is_deleted == False,
-        )
-        .first()
+    letter = get_letter_for_edit(
+        db=db,
+        userid=userid,
+        letter_number=letter_number,
+        payload=payload,
     )
 
-    if not letter:
-        raise AppException(
-            code=ErrorCodes.LETTER_NOT_FOUND,
-            message="Letter not found",
-        )
-
-    # 3️) 비밀번호 검증
-    if not letter.password_for_edit or not verify_password(
-        payload.password,
-        letter.password_for_edit,
-    ):
-        raise AppException(
-            code=ErrorCodes.INVALID_PASSWORD,
-            message="Invalid password",
-        )
-
-    return CommonResponse(
-        data=LetterEditResponse.model_validate(letter)
-    )
+    return CommonResponse(data=LetterEditResponse.model_validate(letter))
 
     
 @router.patch(
@@ -190,52 +138,12 @@ def update_letter(
     payload: LetterUpdateRequest,
     db: DBSession,
 ):
-    # 1️) 유저 확인
-    user = db.query(User).filter(User.userid == userid).first()
-    if not user:
-        raise AppException(
-            code=ErrorCodes.USER_NOT_FOUND,
-            message="User not found",
-        )
-
-    # 2️) 편지 조회
-    letter = (
-        db.query(Letter)
-        .filter(
-            Letter.user_id == user.id,
-            Letter.letter_number == letter_number,
-            Letter.is_deleted == False,
-        )
-        .first()
+    update_letter_for_user(
+        db=db,
+        userid=userid,
+        letter_number=letter_number,
+        payload=payload,
     )
-
-    if not letter:
-        raise AppException(
-            code=ErrorCodes.LETTER_NOT_FOUND,
-            message="Letter not found",
-        )
-
-    # 3️) 비밀번호 검증
-    if not letter.password_for_edit or not verify_password(
-        payload.password,
-        letter.password_for_edit,
-    ):
-        raise AppException(
-            code=ErrorCodes.INVALID_PASSWORD,
-            message="Invalid password",
-        )
-
-    # 4️) 수정 반영
-    if payload.writer_nickname is not None:
-        letter.writer_nickname = payload.writer_nickname
-    if payload.content is not None:
-        letter.content = payload.content
-    if payload.ornament_shape is not None:
-        letter.ornament_shape = payload.ornament_shape
-    if payload.ornament_color is not None:
-        letter.ornament_color = payload.ornament_color
-
-    db.commit()
 
     return CommonResponse(data=None)
 
@@ -249,44 +157,12 @@ def delete_letter(
     payload: LetterPasswordRequest,
     db: DBSession,
 ):
-    # 1️) 유저 확인
-    user = db.query(User).filter(User.userid == userid).first()
-    if not user:
-        raise AppException(
-            code=ErrorCodes.USER_NOT_FOUND,
-            message="User not found",
-        )
-
-    # 2️) 편지 조회
-    letter = (
-        db.query(Letter)
-        .filter(
-            Letter.user_id == user.id,
-            Letter.letter_number == letter_number,
-            Letter.is_deleted == False,
-        )
-        .first()
+    delete_letter_for_user(
+        db=db,
+        userid=userid,
+        letter_number=letter_number,
+        payload=payload,
     )
-
-    if not letter:
-        raise AppException(
-            code=ErrorCodes.LETTER_NOT_FOUND,
-            message="Letter not found",
-        )
-
-    # 3️) 비밀번호 검증
-    if not letter.password_for_edit or not verify_password(
-        payload.password,
-        letter.password_for_edit,
-    ):
-        raise AppException(
-            code=ErrorCodes.INVALID_PASSWORD,
-            message="Invalid password",
-        )
-
-    # 4️) Soft Delete
-    letter.is_deleted = True
-    db.commit()
 
     return CommonResponse(data=None)
     

@@ -7,11 +7,14 @@ from sqlalchemy.orm import Session
 
 from app.core.deps import get_current_user
 from app.core.exceptions import AppException, ErrorCodes
-from app.core.security import hash_password
+from app.core.security import hash_password, verify_password
 from app.db.models.letter import Letter
 from app.db.models.user import User
 from app.db.session import get_db
-from app.schemas.letter_schema import LetterCreateRequest, LetterListItem
+from app.schemas.letter_schema import (LetterCreateRequest,
+                                       LetterPasswordRequest,
+                                       LetterUpdateRequest)
+from app.services.timecheck import is_time_capsule_open
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -72,7 +75,13 @@ def create_letter(
     user: User,
     payload: LetterCreateRequest,
 ) -> Letter:
-    # 1️⃣ 현재 최대 letter_number 조회
+    if is_time_capsule_open():
+        raise AppException(
+            code=ErrorCodes.LETTER_LOCKED_UNTIL_XMAS,
+            message="Letters can only be created before Christmas.",
+        )
+
+    # 1) 현재 최대 letter_number 조회
     last_number = (
         db.query(func.max(Letter.letter_number))
         .filter(Letter.user_id == user.id)
@@ -146,3 +155,189 @@ def get_user_letters_paginated(
         "offset": offset,
         "has_next": has_next,
     }
+
+
+def get_letter_detail_for_user(
+    *,
+    db: Session,
+    userid: str,
+    letter_number: int,
+    current_user: User,
+) -> Letter:
+    if current_user.userid != userid:
+        raise AppException(
+            code=ErrorCodes.PERMISSION_DENIED,
+            message="You do not have permission to access this letter.",
+        )
+
+    letter = (
+        db.query(Letter)
+        .filter(
+            Letter.user_id == current_user.id,
+            Letter.letter_number == letter_number,
+            Letter.is_deleted == False,
+        )
+        .first()
+    )
+
+    if not letter:
+        raise AppException(
+            code=ErrorCodes.LETTER_NOT_FOUND,
+            message="Letter not found",
+        )
+
+    if not is_time_capsule_open():
+        raise AppException(
+            code=ErrorCodes.LETTER_LOCKED_UNTIL_XMAS,
+            message="This letter can be opened on Christmas.",
+        )
+
+    return letter
+
+
+def get_letter_for_edit(
+    *,
+    db: Session,
+    userid: str,
+    letter_number: int,
+    payload: LetterPasswordRequest,
+) -> Letter:
+    user = db.query(User).filter(User.userid == userid).first()
+    if not user:
+        raise AppException(
+            code=ErrorCodes.USER_NOT_FOUND,
+            message="User not found",
+        )
+
+    letter = (
+        db.query(Letter)
+        .filter(
+            Letter.user_id == user.id,
+            Letter.letter_number == letter_number,
+            Letter.is_deleted == False,
+        )
+        .first()
+    )
+
+    if not letter:
+        raise AppException(
+            code=ErrorCodes.LETTER_NOT_FOUND,
+            message="Letter not found",
+        )
+
+    if not letter.password_for_edit or not verify_password(
+        payload.password,
+        letter.password_for_edit,
+    ):
+        raise AppException(
+            code=ErrorCodes.INVALID_PASSWORD,
+            message="Invalid password",
+        )
+
+    return letter
+
+
+def update_letter_for_user(
+    *,
+    db: Session,
+    userid: str,
+    letter_number: int,
+    payload: LetterUpdateRequest,
+) -> None:
+    if is_time_capsule_open():
+        raise AppException(
+            code=ErrorCodes.LETTER_LOCKED_UNTIL_XMAS,
+            message="Letters can only be updated before Christmas.",
+        )
+
+    user = db.query(User).filter(User.userid == userid).first()
+    if not user:
+        raise AppException(
+            code=ErrorCodes.USER_NOT_FOUND,
+            message="User not found",
+        )
+
+    letter = (
+        db.query(Letter)
+        .filter(
+            Letter.user_id == user.id,
+            Letter.letter_number == letter_number,
+            Letter.is_deleted == False,
+        )
+        .first()
+    )
+
+    if not letter:
+        raise AppException(
+            code=ErrorCodes.LETTER_NOT_FOUND,
+            message="Letter not found",
+        )
+
+    if not letter.password_for_edit or not verify_password(
+        payload.password,
+        letter.password_for_edit,
+    ):
+        raise AppException(
+            code=ErrorCodes.INVALID_PASSWORD,
+            message="Invalid password",
+        )
+
+    if payload.writer_nickname is not None:
+        letter.writer_nickname = payload.writer_nickname
+    if payload.content is not None:
+        letter.content = payload.content
+    if payload.ornament_shape is not None:
+        letter.ornament_shape = payload.ornament_shape
+    if payload.ornament_color is not None:
+        letter.ornament_color = payload.ornament_color
+
+    db.commit()
+
+
+def delete_letter_for_user(
+    *,
+    db: Session,
+    userid: str,
+    letter_number: int,
+    payload: LetterPasswordRequest,
+) -> None:
+    if is_time_capsule_open():
+        raise AppException(
+            code=ErrorCodes.LETTER_LOCKED_UNTIL_XMAS,
+            message="Letters can only be deleted before Christmas.",
+        )
+
+    user = db.query(User).filter(User.userid == userid).first()
+    if not user:
+        raise AppException(
+            code=ErrorCodes.USER_NOT_FOUND,
+            message="User not found",
+        )
+
+    letter = (
+        db.query(Letter)
+        .filter(
+            Letter.user_id == user.id,
+            Letter.letter_number == letter_number,
+            Letter.is_deleted == False,
+        )
+        .first()
+    )
+
+    if not letter:
+        raise AppException(
+            code=ErrorCodes.LETTER_NOT_FOUND,
+            message="Letter not found",
+        )
+
+    if not letter.password_for_edit or not verify_password(
+        payload.password,
+        letter.password_for_edit,
+    ):
+        raise AppException(
+            code=ErrorCodes.INVALID_PASSWORD,
+            message="Invalid password",
+        )
+
+    letter.is_deleted = True
+    db.commit()
