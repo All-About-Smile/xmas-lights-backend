@@ -1,18 +1,15 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends
+from fastapi import Depends
 from sqlalchemy.orm import Session
 
 from app.core.deps import get_crypto_service
 from app.db.models.letter import Letter
 from app.db.session import get_db
 
-router = APIRouter(prefix="/admin/letters", tags=["Admin"])
-
 DBSession = Annotated[Session, Depends(get_db)]
 
 
-@router.post("/encrypt-existing")
 def encrypt_existing_letters(
     db: DBSession,
 ):
