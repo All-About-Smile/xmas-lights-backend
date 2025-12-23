@@ -32,9 +32,12 @@ class Settings(BaseSettings):
 
     # ── CORS ──
     CORS_ORIGINS: str = ""  # "http://localhost:5173,https://xxx"
-    
+
     # ── Time Capsule ──
     TIME_CAPSULE_OPEN_AT: datetime | None = None
+
+    # ── Crypto ──
+    LETTER_CRYPTO_KEY: str
 
     model_config = SettingsConfigDict(
         env_file_encoding="utf-8",

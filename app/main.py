@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Request, Response, status
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.api.admin import router as admin_router
 from app.api.auth import router as auth_router
 from app.api.letters import router as letters_router
 from app.api.public import router as public_router
@@ -29,9 +30,7 @@ if settings.cors_origins_list:
 ALLOW_CROSS_ORIGIN_PATHS = {
     "/login",
 }
-ALLOW_CROSS_ORIGIN_PREFIXES = (
-    "/users/",
-)
+ALLOW_CROSS_ORIGIN_PREFIXES = ("/users/",)
 
 
 @app.middleware("http")
@@ -44,11 +43,13 @@ async def add_corp_header(request: Request, call_next):
 
     return response
 
+
 # ── Routers ──
 app.include_router(auth_router)
 app.include_router(users_router)
 app.include_router(letters_router)
 app.include_router(public_router)
+app.include_router(admin_router)
 
 
 @app.get("/ping")

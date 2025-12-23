@@ -1,25 +1,5 @@
 # app/services/letter_service.py
 
-from typing import Annotated, List
-
-from fastapi import APIRouter, Depends
-from sqlalchemy.orm import Session
-
-from app.core.deps import get_current_user
-from app.core.exceptions import AppException, ErrorCodes
-from app.core.security import hash_password, verify_password
-from app.db.models.letter import Letter
-from app.db.models.user import User
-from app.db.session import get_db
-from app.schemas.letter_schema import (LetterCreateRequest,
-                                       LetterPasswordRequest,
-                                       LetterUpdateRequest)
-from app.services.timecheck import is_time_capsule_open
-
-router = APIRouter(prefix="/users", tags=["users"])
-
-DBSession = Annotated[Session, Depends(get_db)]
-CurrentUser = Annotated[User, Depends(get_current_user)]
 from typing import Annotated
 
 from fastapi import APIRouter, Depends
@@ -28,11 +8,25 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.constants.default_letter import DEFAULT_LETTER
-from app.core.deps import get_current_user
+from app.core.deps import get_crypto_service, get_current_user
 from app.core.exceptions import AppException, ErrorCodes
+from app.core.security import hash_password, verify_password
 from app.db.models.letter import Letter
 from app.db.models.user import User
 from app.db.session import get_db
+from app.schemas.letter_schema import (
+    LetterCreateRequest,
+    LetterPasswordRequest,
+    LetterUpdateRequest,
+)
+from app.services.timecheck import is_time_capsule_open
+
+router = APIRouter(prefix="/users", tags=["users"])
+
+DBSession = Annotated[Session, Depends(get_db)]
+CurrentUser = Annotated[User, Depends(get_current_user)]
+
+_crypto = get_crypto_service()
 
 
 def create_default_letter_for_user(
@@ -58,7 +52,7 @@ def create_default_letter_for_user(
         user_id=user.id,
         letter_number=next_number,
         writer_nickname=DEFAULT_LETTER["writer_nickname"],
-        content=DEFAULT_LETTER["content"],
+        content=_crypto.encrypt(DEFAULT_LETTER["content"]),
         ornament_shape=DEFAULT_LETTER["ornament_shape"],
         ornament_color=DEFAULT_LETTER["ornament_color"],
         password_for_edit=hash_password(default_password),
@@ -94,12 +88,14 @@ def create_letter(
         user_id=user.id,
         letter_number=next_number,
         writer_nickname=payload.writer_nickname,
-        content=payload.content,
+        content=_crypto.encrypt(payload.content),
         ornament_shape=payload.ornament_shape,
         ornament_color=payload.ornament_color,
-        password_for_edit=hash_password(payload.password_for_edit)
-        if payload.password_for_edit
-        else None,
+        password_for_edit=(
+            hash_password(payload.password_for_edit)
+            if payload.password_for_edit
+            else None
+        ),
     )
 
     db.add(letter)
@@ -108,11 +104,10 @@ def create_letter(
         db.commit()
     except IntegrityError:
         db.rollback()
-        # 이론상 거의 안 나지만, 동시성 최종 방어
         raise AppException(
             code=ErrorCodes.LETTER_NUMBER_CONFLICT,
             message="잠시 후 다시 시도해주세요.",
-        )
+        ) from None
 
     db.refresh(letter)
     return letter
@@ -138,7 +133,7 @@ def get_user_letters_paginated(
         db.query(Letter)
         .filter(
             Letter.user_id == user.id,
-            Letter.is_deleted == False,
+            Letter.is_deleted.is_(False),
         )
         .order_by(Letter.created_at)
         .limit(limit + 1)
@@ -175,7 +170,7 @@ def get_letter_detail_for_user(
         .filter(
             Letter.user_id == current_user.id,
             Letter.letter_number == letter_number,
-            Letter.is_deleted == False,
+            Letter.is_deleted.is_(False),
         )
         .first()
     )
@@ -191,6 +186,8 @@ def get_letter_detail_for_user(
             code=ErrorCodes.LETTER_LOCKED_UNTIL_XMAS,
             message="This letter can be opened on Christmas.",
         )
+
+    letter.content = _crypto.decrypt(letter.content)
 
     return letter
 
@@ -214,7 +211,7 @@ def get_letter_for_edit(
         .filter(
             Letter.user_id == user.id,
             Letter.letter_number == letter_number,
-            Letter.is_deleted == False,
+            Letter.is_deleted.is_(False),
         )
         .first()
     )
@@ -233,6 +230,8 @@ def get_letter_for_edit(
             code=ErrorCodes.INVALID_PASSWORD,
             message="Invalid password",
         )
+
+    letter.content = _crypto.decrypt(letter.content)
 
     return letter
 
@@ -262,7 +261,7 @@ def update_letter_for_user(
         .filter(
             Letter.user_id == user.id,
             Letter.letter_number == letter_number,
-            Letter.is_deleted == False,
+            Letter.is_deleted.is_(False),
         )
         .first()
     )
@@ -285,7 +284,7 @@ def update_letter_for_user(
     if payload.writer_nickname is not None:
         letter.writer_nickname = payload.writer_nickname
     if payload.content is not None:
-        letter.content = payload.content
+        letter.content = _crypto.encrypt(payload.content)
     if payload.ornament_shape is not None:
         letter.ornament_shape = payload.ornament_shape
     if payload.ornament_color is not None:
@@ -319,7 +318,7 @@ def delete_letter_for_user(
         .filter(
             Letter.user_id == user.id,
             Letter.letter_number == letter_number,
-            Letter.is_deleted == False,
+            Letter.is_deleted.is_(False),
         )
         .first()
     )
