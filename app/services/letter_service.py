@@ -133,7 +133,7 @@ def get_user_letters_paginated(
         db.query(Letter)
         .filter(
             Letter.user_id == user.id,
-            not Letter.is_deleted,
+            Letter.is_deleted.is_(False),
         )
         .order_by(Letter.created_at)
         .limit(limit + 1)
@@ -170,7 +170,7 @@ def get_letter_detail_for_user(
         .filter(
             Letter.user_id == current_user.id,
             Letter.letter_number == letter_number,
-            not Letter.is_deleted,
+            Letter.is_deleted.is_(False),
         )
         .first()
     )
@@ -211,7 +211,7 @@ def get_letter_for_edit(
         .filter(
             Letter.user_id == user.id,
             Letter.letter_number == letter_number,
-            not Letter.is_deleted,
+            Letter.is_deleted.is_(False),
         )
         .first()
     )
@@ -261,7 +261,7 @@ def update_letter_for_user(
         .filter(
             Letter.user_id == user.id,
             Letter.letter_number == letter_number,
-            not Letter.is_deleted,
+            Letter.is_deleted.is_(False),
         )
         .first()
     )
@@ -318,7 +318,7 @@ def delete_letter_for_user(
         .filter(
             Letter.user_id == user.id,
             Letter.letter_number == letter_number,
-            not Letter.is_deleted,
+            Letter.is_deleted.is_(False),
         )
         .first()
     )
