@@ -37,7 +37,7 @@ class LetterListResponse(BaseModel):
 
 class LetterCreateRequest(BaseModel):
     writer_nickname: str
-    content: str
+    content: str = Field(..., max_length=200)
     ornament_shape: PublicOrnamentShape
     ornament_color: PublicOrnamentColor
     password_for_edit: str
@@ -59,7 +59,7 @@ class LetterDetailResponse(BaseModel):
         
 class LetterUpdateRequest(BaseModel):
     writer_nickname: Optional[str] = None
-    content: Optional[str] = None
+    content: Optional[str] = Field(default=None, max_length=200)
     ornament_shape: Optional[PublicOrnamentShape] = None
     ornament_color: Optional[PublicOrnamentColor] = None
     password: str = Field(..., description="편지 수정용 비밀번호")
