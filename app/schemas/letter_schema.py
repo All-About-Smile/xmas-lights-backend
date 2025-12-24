@@ -1,20 +1,20 @@
 from datetime import datetime
+from typing import Annotated, Optional
 
-from pydantic import BaseModel, Field, constr, validator
-
-from typing import Optional
+from pydantic import BaseModel, Field, StringConstraints, validator
 
 from app.constants.ornament import (
-    OrnamentColor,
-    OrnamentShape,
     PublicOrnamentColor,
     PublicOrnamentShape,
 )
+
+Password4Digit = Annotated[str, StringConstraints(pattern=r"^\d{4}$")]
 
 
 class LetterCreate(BaseModel):
     writer_nickname: str
     content: str
+
 
 class LetterListItem(BaseModel):
     letter_number: int
@@ -23,9 +23,10 @@ class LetterListItem(BaseModel):
     ornament_color: str
     is_event_ornament: bool
     created_at: datetime
-    
+
     class Config:
         from_attributes = True
+
 
 class LetterListResponse(BaseModel):
     items: list[LetterListItem]
@@ -35,12 +36,13 @@ class LetterListResponse(BaseModel):
     total_count: int
     total_pages: int
 
+
 class LetterCreateRequest(BaseModel):
     writer_nickname: str
     content: str = Field(..., max_length=200)
     ornament_shape: PublicOrnamentShape
     ornament_color: PublicOrnamentColor
-    password_for_edit: constr(regex=r"^\d{4}$")
+    password_for_edit: Password4Digit | None = None
 
     @validator("writer_nickname", "content", pre=True)
     def _strip_text_fields(cls, value):
@@ -65,6 +67,7 @@ class LetterCreateRequest(BaseModel):
     class Config:
         from_attributes = True
 
+
 class LetterDetailResponse(BaseModel):
     letter_number: int
     writer_nickname: str
@@ -76,15 +79,14 @@ class LetterDetailResponse(BaseModel):
 
     class Config:
         from_attributes = True
-        
+
+
 class LetterUpdateRequest(BaseModel):
     writer_nickname: Optional[str] = None
     content: Optional[str] = Field(default=None, max_length=200)
     ornament_shape: Optional[PublicOrnamentShape] = None
     ornament_color: Optional[PublicOrnamentColor] = None
-    password: constr(regex=r"^\d{4}$") = Field(
-        ..., description="편지 수정용 비밀번호"
-    )
+    password: Password4Digit = Field(..., description="편지 수정용 비밀번호")
 
     @validator("writer_nickname", "content", pre=True)
     def _strip_optional_text_fields(cls, value):
@@ -109,7 +111,8 @@ class LetterUpdateRequest(BaseModel):
         if not value:
             raise ValueError("content must not be empty")
         return value
-    
+
+
 class LetterEditResponse(BaseModel):
     letter_number: int
     writer_nickname: str
@@ -119,7 +122,7 @@ class LetterEditResponse(BaseModel):
 
     class Config:
         from_attributes = True
-    
+
+
 class LetterPasswordRequest(BaseModel):
     password: str = Field(..., description="편지 삭제용 비밀번호")
-    
