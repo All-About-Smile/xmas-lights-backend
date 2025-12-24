@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, constr, validator
 
 from typing import Optional
 
@@ -37,10 +37,30 @@ class LetterListResponse(BaseModel):
 
 class LetterCreateRequest(BaseModel):
     writer_nickname: str
-    content: str
+    content: str = Field(..., max_length=200)
     ornament_shape: PublicOrnamentShape
     ornament_color: PublicOrnamentColor
-    password_for_edit: str
+    password_for_edit: constr(regex=r"^\d{4}$")
+
+    @validator("writer_nickname", "content", pre=True)
+    def _strip_text_fields(cls, value):
+        if isinstance(value, str):
+            return value.strip()
+        return value
+
+    @validator("writer_nickname")
+    def _validate_writer_nickname(cls, value):
+        if not value:
+            raise ValueError("writer_nickname must not be empty")
+        if len(value) > 7:
+            raise ValueError("writer_nickname must be at most 7 characters")
+        return value
+
+    @validator("content")
+    def _validate_content(cls, value):
+        if not value:
+            raise ValueError("content must not be empty")
+        return value
 
     class Config:
         from_attributes = True
@@ -59,10 +79,36 @@ class LetterDetailResponse(BaseModel):
         
 class LetterUpdateRequest(BaseModel):
     writer_nickname: Optional[str] = None
-    content: Optional[str] = None
+    content: Optional[str] = Field(default=None, max_length=200)
     ornament_shape: Optional[PublicOrnamentShape] = None
     ornament_color: Optional[PublicOrnamentColor] = None
-    password: str = Field(..., description="편지 수정용 비밀번호")
+    password: constr(regex=r"^\d{4}$") = Field(
+        ..., description="편지 수정용 비밀번호"
+    )
+
+    @validator("writer_nickname", "content", pre=True)
+    def _strip_optional_text_fields(cls, value):
+        if isinstance(value, str):
+            return value.strip()
+        return value
+
+    @validator("writer_nickname")
+    def _validate_optional_writer_nickname(cls, value):
+        if value is None:
+            return value
+        if not value:
+            raise ValueError("writer_nickname must not be empty")
+        if len(value) > 7:
+            raise ValueError("writer_nickname must be at most 7 characters")
+        return value
+
+    @validator("content")
+    def _validate_optional_content(cls, value):
+        if value is None:
+            return value
+        if not value:
+            raise ValueError("content must not be empty")
+        return value
     
 class LetterEditResponse(BaseModel):
     letter_number: int
