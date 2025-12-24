@@ -17,3 +17,19 @@ class OrnamentColor(str, Enum):
     green = "green"
     blue = "blue"
     admin = "admin"
+
+
+class PublicOrnamentShape(str, Enum):
+    acorn = "acorn"
+    dongle = "dongle"
+    soap = "soap"
+    charlie = "charlie"
+    candle = "candle"
+
+
+class PublicOrnamentColor(str, Enum):
+    yellow = "yellow"
+    purple = "purple"
+    pink = "pink"
+    green = "green"
+    blue = "blue"

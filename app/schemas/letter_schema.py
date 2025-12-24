@@ -4,7 +4,12 @@ from pydantic import BaseModel, Field
 
 from typing import Optional
 
-from app.constants.ornament import OrnamentColor, OrnamentShape
+from app.constants.ornament import (
+    OrnamentColor,
+    OrnamentShape,
+    PublicOrnamentColor,
+    PublicOrnamentShape,
+)
 
 
 class LetterCreate(BaseModel):
@@ -33,8 +38,8 @@ class LetterListResponse(BaseModel):
 class LetterCreateRequest(BaseModel):
     writer_nickname: str
     content: str
-    ornament_shape: OrnamentShape
-    ornament_color: OrnamentColor
+    ornament_shape: PublicOrnamentShape
+    ornament_color: PublicOrnamentColor
     password_for_edit: str
 
     class Config:
@@ -55,8 +60,8 @@ class LetterDetailResponse(BaseModel):
 class LetterUpdateRequest(BaseModel):
     writer_nickname: Optional[str] = None
     content: Optional[str] = None
-    ornament_shape: Optional[OrnamentShape] = None
-    ornament_color: Optional[OrnamentColor] = None
+    ornament_shape: Optional[PublicOrnamentShape] = None
+    ornament_color: Optional[PublicOrnamentColor] = None
     password: str = Field(..., description="편지 수정용 비밀번호")
     
 class LetterEditResponse(BaseModel):
