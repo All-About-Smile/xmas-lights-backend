@@ -64,6 +64,8 @@ def read_user_letters(
         limit=result["limit"],
         offset=result["offset"],
         has_next=result["has_next"],
+        total_count=result["total_count"],
+        total_pages=result["total_pages"],
     )
 
     return CommonResponse(data=data)

@@ -27,6 +27,8 @@ class LetterListResponse(BaseModel):
     limit: int
     offset: int
     has_next: bool
+    total_count: int
+    total_pages: int
 
 class LetterCreateRequest(BaseModel):
     writer_nickname: str

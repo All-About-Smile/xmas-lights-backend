@@ -143,12 +143,24 @@ def get_user_letters_paginated(
 
     has_next = len(letters) > limit
     letters = letters[:limit]
+    total_count = (
+        db.query(func.count(Letter.id))
+        .filter(
+            Letter.user_id == user.id,
+            Letter.is_deleted.is_(False),
+        )
+        .scalar()
+        or 0
+    )
+    total_pages = (total_count + limit - 1) // limit
 
     return {
         "letters": letters,
         "limit": limit,
         "offset": offset,
         "has_next": has_next,
+        "total_count": total_count,
+        "total_pages": total_pages,
     }
 
 
